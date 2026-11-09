@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "shmingledorph",
+  "version": "${version}",
+  "name": "Shmingledorph Effects",
+  "description": "Custom status effects for Shmingledorph SMP",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.shmingledorph.effects.ShmingledorphEffects"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
