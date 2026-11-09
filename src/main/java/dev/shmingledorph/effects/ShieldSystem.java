@@ -16,7 +16,7 @@ public final class ShieldSystem {
     }
 
     public static void tick(LivingEntity entity) {
-        if (entity.getWorld().isClient()) return;
+        if (entity.getEntityWorld().isClient()) return;
         ShieldAccess state = (ShieldAccess) entity;
         var active = entity.getStatusEffect(ShmingledorphEffects.EFFECTS.get("shield"));
         float target = capacity(active);
@@ -43,7 +43,7 @@ public final class ShieldSystem {
      * Vanilla then consumes golden absorption and attacks red health as usual.
      */
     public static float absorb(LivingEntity entity, float damage) {
-        if (entity.getWorld().isClient() || damage <= 0) return damage;
+        if (entity.getEntityWorld().isClient() || damage <= 0) return damage;
         ShieldAccess state = (ShieldAccess) entity;
         float current = state.shmingledorph$getShield();
         if (current <= 0) return damage;
@@ -54,7 +54,7 @@ public final class ShieldSystem {
     }
 
     public static float healShield(LivingEntity entity, float healing) {
-        if (healing <= 0 || entity.getWorld().isClient()) return 0;
+        if (healing <= 0 || entity.getEntityWorld().isClient()) return 0;
         ShieldAccess state = (ShieldAccess) entity;
         float missing = state.shmingledorph$getShieldMax() - state.shmingledorph$getShield();
         float added = Math.max(0, Math.min(missing, healing));
