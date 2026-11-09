@@ -1,0 +1,38 @@
+name: Smoke Test Fabric Client
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Start Minecraft client under virtual display
+        shell: bash
+        run: |
+          set -e
+          command -v xvfb-run >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y xvfb)
+          set +e
+          timeout 160s xvfb-run -a -s "-screen 0 1280x720x24" gradle runClient --console=plain >/tmp/minecraft-client.log 2>&1
+          code=$?
+          set -e
+          tail -n 180 /tmp/minecraft-client.log
+          if grep -Eiq "Mixin apply failed|MixinTransformerError|InjectionError|NoSuchMethodError|NoClassDefFoundError|Fatal error|Failed to create window|Could not initialize class" /tmp/minecraft-client.log; then
+            echo "Client crash or mixin application error" >&2
+            exit 1
+          fi
+          if ! grep -Eiq "MinecraftClient|Setting user:|Backend library: LWJGL|OpenGL version" /tmp/minecraft-client.log; then
+            echo "Minecraft client did not start (exit $code)" >&2
+            exit 1
+          fi
+          echo "Minecraft client launch reached startup logs"
