@@ -83,7 +83,12 @@ public final class ShmingledorphEffects implements ModInitializer {
 
     private static void run(ServerPlayerEntity player, String command) {
         // Executing as the actual player also avoids unescaped name selectors.
-        var source = player.getCommandSource().withLevel(4);
+        var playerSource = player.getCommandSource();
+        var source = playerSource.getServer().getCommandSource()
+            .withEntity(player)
+            .withWorld(playerSource.getWorld())
+            .withPosition(playerSource.getPosition())
+            .withSilent();
         source.getServer().getCommandManager().executeWithPrefix(source, command);
     }
 
