@@ -47,3 +47,6 @@ All eleven IDs exist and are usable in `/effect give`, though not all mechanics 
 `gradle build` (Java 21) produces the remapped mod JAR in `build/libs`. CI uses GitHub Actions to build and upload the JAR.
 
 **Do not deploy to the live SMP until the unfinished mechanics and interoperability testing are complete.**
+
+## Active development
+Shield / Void Omen / true stun overhaul and extra effects are under development on this branch. Do not ship until CI and in-game tests pass.
