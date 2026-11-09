@@ -32,6 +32,7 @@ public final class ShmingledorphEffects implements ModInitializer {
     private static final Map<UUID, Integer> SOUND_COOLDOWNS = new HashMap<>();
     private static final Random RANDOM = new Random();
     private static final Set<UUID> IMMORTAL_ZERO = new HashSet<>();
+    private static final Set<UUID> CURSED_DEATH_PENDING = new HashSet<>();
 
     private static void register(String name, int color, StatusEffectCategory category) {
         var effect = Registry.register(Registries.STATUS_EFFECT,
@@ -42,6 +43,7 @@ public final class ShmingledorphEffects implements ModInitializer {
     @Override
     public void onInitialize() {
         register("flashed", 0xFFFFFF, StatusEffectCategory.HARMFUL);
+        register("true_blindness", 0x030304, StatusEffectCategory.HARMFUL);
         register("hallucinating", 0x8972A8, StatusEffectCategory.HARMFUL);
         register("quiet_hallucination", 0x39343F, StatusEffectCategory.HARMFUL);
         register("void_omen", 0x151021, StatusEffectCategory.HARMFUL);
@@ -58,7 +60,10 @@ public final class ShmingledorphEffects implements ModInitializer {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             if (!entity.hasStatusEffect(EFFECTS.get("nimble"))) return true;
             if (!isCombatHit(source)) return true;
-            if (RANDOM.nextFloat() >= 0.10f) return true;
+            var nimble = entity.getStatusEffect(EFFECTS.get("nimble"));
+            int level = Math.min(10, nimble.getAmplifier() + 1);
+            float dodgeChance = 0.10f + (level - 1) * 0.05f;
+            if (RANDOM.nextFloat() >= dodgeChance) return true;
             if (entity instanceof ServerPlayerEntity player) {
                 run(player, "particle minecraft:cloud ~ ~1 ~ 0.35 0.4 0.35 0.03 14 force");
                 run(player, "playsound minecraft:entity.player.attack.sweep player @s ~ ~ ~ 0.9 1.5");
@@ -71,15 +76,19 @@ public final class ShmingledorphEffects implements ModInitializer {
         // Track the logically zero state so expiry kills unless healed.
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return true;
-            if (!player.hasStatusEffect(EFFECTS.get("immortality"))) return true;
-            IMMORTAL_ZERO.add(player.getUuid());
-            player.setHealth(1.0f);
-            return false;
+            if (player.hasStatusEffect(EFFECTS.get("immortality"))) {
+                IMMORTAL_ZERO.add(player.getUuid());
+                player.setHealth(1.0f);
+                return false;
+            }
+            // Capture Cursed at the last live moment: effects may be removed before AFTER_DEATH.
+            if (player.hasStatusEffect(EFFECTS.get("cursed"))) CURSED_DEATH_PENDING.add(player.getUuid());
+            return true;
         });
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
-            if (!player.hasStatusEffect(EFFECTS.get("cursed"))) return;
+            if (!CURSED_DEATH_PENDING.remove(player.getUuid())) return;
             // Existing SMP datapack handles Death's Domain when life reaches zero.
             run(player, "scoreboard players set @s life 0");
         });
@@ -125,9 +134,9 @@ public final class ShmingledorphEffects implements ModInitializer {
             run(player, "effect give @s minecraft:weakness 2 255 true");
         }
         var omen = player.getStatusEffect(EFFECTS.get("void_omen"));
-        if (omen != null && player.age % 80 == 0) {
-            int level = Math.min(5, omen.getAmplifier() + 1);
-            run(player, "effect give @s minecraft:darkness " + (5 + level) + " 0 true");
+        if (omen != null && player.age % 28 == 0) {
+            // Cadenced continuous heartbeat without piling multiple overlapping audio clips.
+            run(player, "playsound minecraft:entity.warden.heartbeat ambient @s ~ ~ ~ 0.9 0.85");
         }
 
         boolean quiet = player.hasStatusEffect(EFFECTS.get("quiet_hallucination"));
@@ -155,9 +164,7 @@ public final class ShmingledorphEffects implements ModInitializer {
         int dz = RANDOM.nextInt(19) - 9;
         run(player, "execute positioned ~" + dx + " ~" + dy + " ~" + dz
             + " run playsound " + sound + " ambient @s ~ ~ ~ 1 1");
-        if (omen != null && RANDOM.nextInt(4) == 0) {
-            run(player, "playsound minecraft:entity.warden.heartbeat ambient @s ~ ~ ~ 0.65 0.75");
-        }
+
     }
 
     private static final class BasicEffect extends StatusEffect {
