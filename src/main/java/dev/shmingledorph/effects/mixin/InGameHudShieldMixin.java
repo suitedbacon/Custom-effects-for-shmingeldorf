@@ -43,7 +43,7 @@ public abstract class InGameHudShieldMixin {
         shmingledorph$blueRows = ShieldHudRenderer.rows(
             ((ShieldAccess)player).shmingledorph$getShieldMax());
         shmingledorph$currentHeartIndex = shmingledorph$redHearts
-            + (int) Math.ceil(absorption / 2.0f) - 1;
+            + (int) Math.ceil(absorption / 2.0f);
     }
 
     @ModifyArgs(
