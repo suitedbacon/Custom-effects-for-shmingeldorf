@@ -95,8 +95,16 @@ public final class ShmingledorphEffects implements ModInitializer {
             : new String[]{"minecraft:ambient.cave", "minecraft:entity.enderman.ambient",
                 "minecraft:entity.creeper.primed", "minecraft:entity.warden.ambient"};
         String sound = sounds[RANDOM.nextInt(sounds.length)];
-        // playsound targets only the affected player, never the surrounding players.
-        run(player, "playsound " + sound + " ambient @s ~ ~ ~ 0.8 1");
+        // Use an offset sound origin: a fake noise should seem to come from
+        // somewhere nearby, rather than always from inside the listener.
+        int dx = RANDOM.nextInt(19) - 9;
+        int dy = RANDOM.nextInt(7) - 3;
+        int dz = RANDOM.nextInt(19) - 9;
+        run(player, "execute positioned ~" + dx + " ~" + dy + " ~" + dz
+            + " run playsound " + sound + " ambient @s ~ ~ ~ 1 1");
+        if (omen != null && RANDOM.nextInt(4) == 0) {
+            run(player, "playsound minecraft:entity.warden.heartbeat ambient @s ~ ~ ~ 0.65 0.75");
+        }
     }
 
     private static final class BasicEffect extends StatusEffect {
