@@ -1,9 +1,9 @@
-# Shmingledorph Effects v0.2.2-dev — Minecraft Java 1.21.11 / Fabric
+# Shmingledorph Effects v0.3.0-dev — Minecraft Java 1.21.11 / Fabric
 
 **Development test release, not approved for production SMP.** GitHub Actions compiles the mod and runs a dedicated server startup smoke test. Client visuals, multiplayer behavior, and cross-mod integrations still require in-game testing.
 
 ## Installation
-Download the latest successful **Build Fabric mod** artifact from [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions). Unzip the artifact; install the non-sources `shmingledorph-effects-0.2.2-dev.jar` in the `mods` folders of both Minecraft client and Fabric server. Requires Fabric Loader 0.18.4+, Fabric API, Java 21 and Minecraft 1.21.11. Do not install the earlier 0.1.0 JAR alongside this one.
+Download the latest successful **Build Fabric mod** artifact from [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions). Unzip the artifact; install the non-sources `shmingledorph-effects-0.3.0-dev.jar` in the `mods` folders of both Minecraft client and Fabric server. Requires Fabric Loader 0.18.4+, Fabric API, Java 21 and Minecraft 1.21.11. Do not install the earlier 0.1.0 JAR alongside this one.
 
 ## Commands
 ```mcfunction
@@ -43,7 +43,7 @@ Run `gradle build` on Java 21. CI builds the remapped JAR and runs an automated 
 ## Shield HUD hotfix (0.2.2-dev)
 The old independent HUD overlay positioned blue hearts using a hard-coded `screenHeight - 39`, extra armor offset, and `10px` rows. That could drift upward or collide with gold Absorption when Shield strength increased. This hotfix renders inside vanilla `InGameHud.renderHealthBar` using its `x, y, lines` values. Vanilla gold hearts are moved into their own rows above blue Shield hearts; regular health stays where Minecraft originally draws it. Normal health plus Shield X and Absorption are now laid out as separate contiguous 10-heart rows. No shield damage/healing balance mechanics were changed.
 
-## v0.2.2-dev Survival-mode crash fix
+## v0.3.0-dev Survival-mode crash fix
 In v0.2.1-dev, switching to Survival could crash with
 `java.lang.IllegalAccessError` involving `net.minecraft.class_329$class_6411` and
 `org.spongepowered.asm.synthetic.args.Args$5`.
@@ -52,3 +52,25 @@ Mixin `@ModifyArgs`. This version adds a Fabric access widener for
 `InGameHud$HeartType` so the generated argument class can access it legally.
 No gameplay balance changes. Validate this specifically in **Survival mode**, including Shield X
 and Absorption, before deploying to the SMP.
+
+## v0.3.0-dev: Cyan Shield hearts, custom effect icons, Anti-Gravity
+
+- Shield's pixel heart artwork is now 7 pixels wide instead of 9, with a bright cyan fill, turquoise shading and a smaller footprint. The 8-pixel-wide vanilla heart slots and health bar alignment remain unchanged. Gold Absorption hearts stay above blue Shield hearts; blue hearts stay above red health.
+- All **13** registered effects now include original **18×18 PNG** status-effect icons under `assets/shmingledorph/textures/mob_effect/`: Flashed, True Blindness, Hallucinating, Quiet Hallucination, Void Omen, Stunned, Shield, Immortality, Inverted, Vulnerable, Nimble, Cursed and Anti-Gravity.
+- `shmingledorph:anti_gravity` uses **I–XV** (amplifiers `0` through `14`). This changes actual entity gravity rather than applying a vanilla Levitation effect.
+  - I–IX: gravity decreases by 10 percentage points per level. Level I = 90% gravity, Level V = 50%, Level IX = 10%.
+  - X: zero gravity. When you jump, you retain upward momentum instead of falling normally.
+  - XI–XV: progressively **reversed** gravity, up to approximately -1.75× normal gravity at XV, launching players skyward.
+  - Fall damage at I–IX is multiplied by `0.74 ^ level`; Level X–XV are fall-damage immune while the effect lasts. Other damage types are unchanged.
+- The effect does not set `NoGravity` NBT, so physics revert automatically when it expires.
+- For extreme launch tests, use a **disposable test world**, especially with the automatic end-of-effect fall.
+
+### Anti-Gravity commands
+```mcfunction
+/effect give @s shmingledorph:anti_gravity 60 0
+/effect give @s shmingledorph:anti_gravity 60 4
+/effect give @s shmingledorph:anti_gravity 60 9
+/effect give @s shmingledorph:anti_gravity 60 14
+```
+
+**Note:** Startup CI tests verify mod initialization but cannot guarantee the full in-world physics or HUD placement. Check the heart layout and gravity at I, IX, X, XV in Creative and Survival before replacing your live SMP version.
