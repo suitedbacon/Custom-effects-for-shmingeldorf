@@ -1,0 +1,5 @@
+accessWidener v2 named
+# ModifyArgs generates org.spongepowered.asm.synthetic.args classes outside the
+# Minecraft HUD's private nest. Make the nested HeartType enum accessible so
+# synthetic argument bundles can legally reference its class at runtime.
+accessible class net/minecraft/client/gui/hud/InGameHud$HeartType

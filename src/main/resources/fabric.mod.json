@@ -21,5 +21,6 @@
   },
   "mixins": [
     "shmingledorph.mixins.json"
-  ]
+  ],
+  "accessWidener": "shmingledorph.accesswidener"
 }
