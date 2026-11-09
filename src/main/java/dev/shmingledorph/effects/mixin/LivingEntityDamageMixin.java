@@ -15,6 +15,6 @@ public abstract class LivingEntityDamageMixin {
         var effect = self.getStatusEffect(ShmingledorphEffects.EFFECTS.get("vulnerable"));
         if (effect == null || amount <= 0) return amount;
         int level = Math.min(10, effect.getAmplifier() + 1);
-        return amount * (1.0f + level * 0.20f);
+        return amount * (1.0f + level * 0.40f);
     }
 }
