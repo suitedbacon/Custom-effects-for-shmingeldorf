@@ -1,52 +1,41 @@
-# Shmingledorph Effects — Minecraft Java 1.21.11 / Fabric
+# Shmingledorph Effects v0.2.0-dev — Minecraft Java 1.21.11 / Fabric
 
-**DEV BUILD: compiles successfully on GitHub Actions. Not approved for the live SMP.** No Minecraft client or multiplayer test has yet been run.
+**Development test release, not approved for production SMP.** GitHub Actions compiles the mod and runs a dedicated server startup smoke test. Client visuals, multiplayer behavior, and cross-mod integrations still require in-game testing.
 
-## Download
-Open [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions), choose the latest successful **Build Fabric mod** run, and download the `shmingledorph-effects-jar` artifact. Extract the ZIP and put **shmingledorph-effects-0.1.0.jar** in the mods folder of both the Fabric client and Fabric server. Install Fabric API too.
+## Installation
+Download the latest successful **Build Fabric mod** artifact from [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions). Unzip the artifact; install the non-sources `shmingledorph-effects-0.2.0-dev.jar` in the `mods` folders of both Minecraft client and Fabric server. Requires Fabric Loader 0.18.4+, Fabric API, Java 21 and Minecraft 1.21.11. Do not install the earlier 0.1.0 JAR alongside this one.
 
-The compiled JAR is **not** the source ZIP. Java 21, Minecraft 1.21.11 and Fabric Loader 0.18.4+ are required.
-
-## Custom effects
-All eleven IDs exist and are usable in `/effect give`, though not all mechanics are complete.
-
-| ID | What this development build currently does |
-| --- | --- |
-| `flashed` | Client renders a layered white screen overlay, intensifying from I to III. HUD layers are drawn over the whiteout. |
-| `hallucinating` | Periodically plays randomly positioned fake vanilla sounds just for the affected player. |
-| `quiet_hallucination` | Periodically plays subtle fake sounds, **but still behaves as a normal removable/visible status effect**. |
-| `void_omen` | Repeated vanilla Darkness, sound hallucinations, occasional Warden heartbeat. |
-| `stunned` | High levels of Slowness, Mining Fatigue and Weakness; client-side movement keys are blocked. Server has NOT yet secured all item and block actions. |
-| `shield` | ID is registered; no extra blue-heart mechanics yet. |
-| `immortality` | Cancels fatal player death via the Fabric death event, temporarily keeping one true HP. A tracked logically-zero player dies on effect expiration if not healed. The zero-health HUD and persistence are unfinished. |
-| `inverted` | Client reverses forward/back, strafing and jump/sneak keyboard inputs, without inverting camera. |
-| `vulnerable` | Incoming damage multiplier via Mixin: level I = 1.2x, level V = 2x, level X = 3x. |
-| `nimble` | 10% chance to dodge eligible attacks/projectiles; player swoosh and particles. |
-| `cursed` | On a genuine player death runs scoreboard command setting the dying player's existing `life` score to 0. The SMP's existing datapack must handle Death's Domain. |
-
-### Example test commands
+## Commands
 ```mcfunction
-/effect give @s shmingledorph:flashed 30 2
-/effect give @s shmingledorph:inverted 30 0
+/effect give @s shmingledorph:shield 60 0
+/effect give @s shmingledorph:shield 60 2
+/effect give @s shmingledorph:void_omen 30 4
 /effect give @s shmingledorph:stunned 5 0
-/effect give @s shmingledorph:vulnerable 30 9
-/effect give @s shmingledorph:immortality 15 0
-/effect give @s shmingledorph:nimble 30 0
+/effect give @s shmingledorph:true_blindness 10 0
+/effect give @s shmingledorph:flashed 10 2
+/effect give @s shmingledorph:nimble 60 9
+/effect give @s shmingledorph:vulnerable 60 9
+/effect give @s shmingledorph:cursed 60 0
+/effect give @s shmingledorph:immortality 60 0
+/effect clear @s
 ```
 
-## Still required for full SMP release
-- Shield's separate light-blue hearts, shield-only Instant Health, damage interception and remaining-shield-to-Absorption conversion.
-- Quiet Hallucination's secret, milk-resistant server-side state and admin controls.
-- Full Stunned action enforcement including server interaction checks.
-- Immortality's true zero-health display and safe persistence through reconnect/restart.
-- Extra Void Omen custom darkness progression.
-- Full client, multiplayer, and scoreboard integration testing; ensure Cursed interoperates with the existing lives system, totems, Immortality and respawns.
-- Validate behavior with other custom mods and during long running server sessions.
+## Effects and behavior
+- **Shield**: +2 blue hearts per level, shown in a separate row above regular health hearts. Incoming damage uses **gold Absorption first → blue Shield second → red health last**; affected blue hearts do not heal with ordinary natural regeneration. Instant Health heals shield. When the status effect ends, remaining blue HP converts to golden Absorption HP. The pool is synchronized from the server with entity tracked data. Persistence across restart/death and coordination with health-rendering mods need in-game testing.
+- **Void Omen I–V**: progressively darker purple visual fog caps at 96 / 64 / 42 / 26 / 12 blocks. This is a *camera visibility fog cap*, **not an actual setting that decreases chunk/render-distance options**. Plays an ongoing Warden heartbeat every 28 ticks while active.
+- **Stunned**: client movement/action input disabled; server blocks movement, digging, attack, interact, use, inventory click, hotbar change, drop, swap and other normal gameplay packets. Players can still look around; **chat, pause, and disconnect remain allowed**. Not guaranteed to stop every action from third-party mods or command access.
+- **Nimble I–X**: 10% dodge chance at level I, +5 percentage points per level, 55% at level X for eligible combat hits.
+- **Vulnerable I–X**: +40% incoming damage per level: I = 1.4x, V = 3.0x, X = 5.0x.
+- **Cursed**: death-event capture fix so a player who actually dies with Cursed has their SMP `life` objective set to zero. This requires the existing lives datapack/scoreboard. Totem saves/Immortality deaths should not trigger the curse. Verify on a disposable world: it can permanently impact player lives.
+- **True Blindness**: black world-view overlay while the HUD stays visible.
+- **Flashed I–III**: original white flash remains; press **F8** in-game to toggle an alternative dark-amber palette. Preference persists in `config/shmingledorph-effects.json` via `flashColor` = `white` or `amber`. **The alternative is an accessibility preference, not a guarantee of seizure safety.**
+- **Hallucinating**: randomized nearby sound illusions.
+- **Quiet Hallucination**: subtle fake nearby sounds; not yet secret/milk-resistant.
+- **Inverted**: client movement inputs inverted without camera inversion.
+- **Immortality**: first-pass prevention of fatal player death with tracked zero state; full display/restart robustness is unfinished.
 
-## Development
-`gradle build` (Java 21) produces the remapped mod JAR in `build/libs`. CI uses GitHub Actions to build and upload the JAR.
+## Test warnings
+**DO NOT deploy this version to the live SMP yet.** Test Shield damage order and blue-heart HUD under armor/Absorption, Instant Health, expiration, effect amplifier changes, and damage from multiple sources. Test Stunned chat/escape, Cursed with the `life` scoreboard and your Death's Domain datapack, deaths with totems, and other installed custom mods.
 
-**Do not deploy to the live SMP until the unfinished mechanics and interoperability testing are complete.**
-
-## Active development
-Shield / Void Omen / true stun overhaul and extra effects are under development on this branch. Do not ship until CI and in-game tests pass.
+### For developers
+Run `gradle build` on Java 21. CI builds the remapped JAR and runs an automated Fabric dedicated-server startup smoke test.
