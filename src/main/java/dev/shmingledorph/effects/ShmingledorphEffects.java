@@ -66,8 +66,6 @@ public final class ShmingledorphEffects implements ModInitializer {
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
             if (!player.hasStatusEffect(EFFECTS.get("cursed"))) return;
-            var server = player.getServer();
-            if (server == null) return;
             // Existing SMP datapack handles Death's Domain when life reaches zero.
             run(player, "scoreboard players set @s life 0");
         });
@@ -84,12 +82,9 @@ public final class ShmingledorphEffects implements ModInitializer {
     }
 
     private static void run(ServerPlayerEntity player, String command) {
-        var server = player.getServer();
-        if (server == null) return;
-        server.getCommandManager().executeWithPrefix(
-            server.getCommandSource().withLevel(4),
-            "execute as " + player.getGameProfile().getName() + " at @s run " + command
-        );
+        // Executing as the actual player also avoids unescaped name selectors.
+        var source = player.getCommandSource().withLevel(4);
+        source.getServer().getCommandManager().executeWithPrefix(source, command);
     }
 
     private static void tick(ServerPlayerEntity player) {
