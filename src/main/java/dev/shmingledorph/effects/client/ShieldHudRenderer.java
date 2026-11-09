@@ -11,9 +11,10 @@ import net.minecraft.entity.player.PlayerEntity;
  * Heart order, from bottom up: regular health / blue shield / gold absorption.
  */
 public final class ShieldHudRenderer {
+    // Deliberately 7px wide instead of the usual 9px vanilla sprites:
+    // the cyan layer stays visually lighter than the gold Absorption row.
     private static final String[] HEART = {
-        " 11  11 ", "11111111", "11111111", "11111111",
-        " 111111 ", "  1111  ", "   11   "
+        " 11 11 ", "1111111", "1111111", " 11111 ", " 11111 ", "  111  ", "   1   "
     };
 
     private ShieldHudRenderer() {}
@@ -46,7 +47,7 @@ public final class ShieldHudRenderer {
             int yy = vanillaHealthBaseY - (redRows + i / 10) * spacing;
             float points = remaining - i * 2.0f;
             int fill = points >= 2.0f ? 2 : points > 0 ? 1 : 0;
-            drawHeart(draw, xx, yy, fill);
+            drawHeart(draw, xx + 1, yy + 1, fill);
         }
     }
 
@@ -55,10 +56,10 @@ public final class ShieldHudRenderer {
             String pixels = HEART[row];
             for (int col = 0; col < pixels.length(); col++) {
                 if (pixels.charAt(col) != '1') continue;
-                int color = 0xFF103A4D;
-                if (state == 2 || (state == 1 && col <= 3)) {
-                    color = row < 2 ? 0xFFB6FAFF
-                        : (col % 3 == 0 ? 0xFF64E4F9 : 0xFF39BBDD);
+                int color = 0xFF074C60;
+                if (state == 2 || (state == 1 && col <= 2)) {
+                    color = row < 2 ? 0xFFCCFFFF
+                        : (col % 3 == 0 ? 0xFF00F9FF : 0xFF02CFE6);
                 }
                 draw.fill(x + col, y + row, x + col + 1, y + row + 1, color);
             }
