@@ -88,7 +88,7 @@ public final class ShmingledorphEffects implements ModInitializer {
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
-            if (!CURSED_DEATH_PENDING.remove(player.getUuid())) return;
+            if (!CURSED_DEATH_PENDING.remove(player.getUuid())\n                && !player.hasStatusEffect(EFFECTS.get("cursed"))) return;
             // Existing SMP datapack handles Death's Domain when life reaches zero.
             run(player, "scoreboard players set @s life 0");
         });
