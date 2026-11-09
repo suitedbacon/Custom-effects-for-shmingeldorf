@@ -11,11 +11,11 @@ Example: `/effect give @s shmingledorph:cursed 60 0`
 
 ## Mechanics implemented so far (unverified in-game)
 - Cursed: after an actual player death, sets the dying player's existing `life` scoreboard to 0. The SMP's existing Death's Domain system must perform the transfer.
-- Hallucinating: occasional randomized vanilla sound, heard by the affected player.
+- Hallucinating: occasional randomized vanilla sound, heard by the affected player, from offset nearby positions.
 - Quiet Hallucination: occasional realistic sounds, **but not yet hidden or milk-resistant**.
-- Void Omen: applies repeated vanilla Darkness and participates in random sounds.
+- Void Omen: applies repeated vanilla Darkness and participates in random sounds, including occasional heartbeat.
 
-## Not yet implemented
+- Nimble: 10% chance to cancel eligible combat damage; particle and swoosh feedback for players (unverified).\n\n## Not yet implemented
 - Flashed custom screen overlay.
 - Hidden persistent Quiet Hallucination state, immunity to milk, and specialized removal command.
 - Stunned input and server-side action restrictions.
