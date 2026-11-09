@@ -8,6 +8,9 @@
   "entrypoints": {
     "main": [
       "dev.shmingledorph.effects.ShmingledorphEffects"
+    ],
+    "client": [
+      "dev.shmingledorph.effects.client.ShmingledorphEffectsClient"
     ]
   },
   "depends": {
@@ -15,5 +18,8 @@
     "minecraft": "1.21.11",
     "java": ">=21",
     "fabric-api": "*"
-  }
+  },
+  "mixins": [
+    "shmingledorph.mixins.json"
+  ]
 }
