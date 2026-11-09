@@ -3,7 +3,6 @@ package dev.shmingledorph.effects.mixin;
 import dev.shmingledorph.effects.ShieldSystem;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.InstantHealthOrDamageStatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.world.ServerWorld;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(InstantHealthOrDamageStatusEffect.class)
+@Mixin(targets = "net.minecraft.entity.effect.InstantHealthOrDamageStatusEffect")
 public abstract class InstantHealthShieldMixin {
     private boolean shmingledorph$isHealing() {
         return (Object)this == StatusEffects.INSTANT_HEALTH.value();
