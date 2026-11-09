@@ -11,5 +11,6 @@
   "effect.shmingledorph.nimble": "Nimble",
   "effect.shmingledorph.cursed": "Cursed",
   "effect.shmingledorph.true_blindness": "True Blindness",
-  "key.shmingledorph.flash_palette": "Toggle Flash Color (White / Dark Amber)"
+  "key.shmingledorph.flash_palette": "Toggle Flash Color (White / Dark Amber)",
+  "effect.shmingledorph.anti_gravity": "Anti-Gravity"
 }
