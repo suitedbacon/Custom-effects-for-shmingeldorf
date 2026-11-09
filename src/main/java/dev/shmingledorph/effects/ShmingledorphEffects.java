@@ -4,6 +4,9 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -47,6 +50,19 @@ public final class ShmingledorphEffects implements ModInitializer {
         register("nimble", 0x8CEAC8, StatusEffectCategory.BENEFICIAL);
         register("cursed", 0x4A1324, StatusEffectCategory.HARMFUL);
 
+        // Nimble: a 10% independent chance to evade an eligible hit.
+        // Avoid cancelling environmental damage such as fire, falling or starvation.
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (!entity.hasStatusEffect(EFFECTS.get("nimble"))) return true;
+            if (!isCombatHit(source)) return true;
+            if (RANDOM.nextFloat() >= 0.10f) return true;
+            if (entity instanceof ServerPlayerEntity player) {
+                run(player, "particle minecraft:cloud ~ ~1 ~ 0.35 0.4 0.35 0.03 14 force");
+                run(player, "playsound minecraft:entity.player.attack.sweep player @s ~ ~ ~ 0.9 1.5");
+            }
+            return false;
+        });
+
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
             if (!player.hasStatusEffect(EFFECTS.get("cursed"))) return;
@@ -59,6 +75,12 @@ public final class ShmingledorphEffects implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (var player : server.getPlayerManager().getPlayerList()) tick(player);
         });
+    }
+
+    private static boolean isCombatHit(DamageSource source) {
+        // Direct attacks have a living attacker; projectiles carry an owner.
+        return source.getAttacker() instanceof LivingEntity
+            || source.getSource() instanceof ProjectileEntity;
     }
 
     private static void run(ServerPlayerEntity player, String command) {
