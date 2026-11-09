@@ -15,10 +15,10 @@ Example: `/effect give @s shmingledorph:cursed 60 0`
 - Quiet Hallucination: occasional realistic sounds, **but not yet hidden or milk-resistant**.
 - Void Omen: applies repeated vanilla Darkness and participates in random sounds, including occasional heartbeat.
 
-- Nimble: 10% chance to cancel eligible combat damage; particle and swoosh feedback for players (unverified).\n\n## Not yet implemented
+- Nimble: 10% chance to cancel eligible combat damage; particle and swoosh feedback for players (unverified).\n- Stunned: first-pass Slowness 255, Mining Fatigue 255, Weakness 255 refreshed each second. **Not a full stun**; client inputs and server actions remain unrestricted.\n\n## Not yet implemented
 - Flashed custom screen overlay.
 - Hidden persistent Quiet Hallucination state, immunity to milk, and specialized removal command.
-- Stunned input and server-side action restrictions.
+- Complete Stunned input and server-side action restrictions (the first-pass potion penalties are insufficient).
 - Shield separate blue heart pool, damage absorption, healing, and conversion.
 - Immortality lethal damage interception and zero-HP behavior.
 - Inverted controls.
