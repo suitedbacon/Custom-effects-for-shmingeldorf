@@ -75,7 +75,8 @@ public final class ShmingledorphEffectsClient implements ClientModInitializer {
                 // Reserve a row above vanilla hearts; leave an extra row if vanilla has multiple rows.
                 int regularRows = Math.max(1, (int)Math.ceil((player.getMaxHealth()
                     + player.getAbsorptionAmount()) / 20f));
-                int baseline = draw.getScaledWindowHeight() - 39 - regularRows * 10;
+                int baseline = draw.getScaledWindowHeight() - 39 - regularRows * 10
+                    - (player.getArmor() > 0 ? 10 : 0);
                 for (int i = 0; i < totalHearts; i++) {
                     int xx = x + (i % 10) * 8;
                     int yy = baseline - (i / 10) * 10;
