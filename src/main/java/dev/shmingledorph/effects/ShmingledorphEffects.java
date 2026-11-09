@@ -89,7 +89,7 @@ public final class ShmingledorphEffects implements ModInitializer {
             .withWorld(playerSource.getWorld())
             .withPosition(playerSource.getPosition())
             .withSilent();
-        source.getServer().getCommandManager().executeWithPrefix(source, command);
+        source.getServer().getCommandManager().parseAndExecute(source, command);
     }
 
     private static void tick(ServerPlayerEntity player) {
