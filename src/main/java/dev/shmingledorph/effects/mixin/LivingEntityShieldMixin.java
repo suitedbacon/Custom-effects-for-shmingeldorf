@@ -3,6 +3,8 @@ package dev.shmingledorph.effects.mixin;
 import dev.shmingledorph.effects.ShieldAccess;
 import dev.shmingledorph.effects.ShieldSystem;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -50,4 +52,24 @@ public abstract class LivingEntityShieldMixin implements ShieldAccess {
             float rawDamage, CallbackInfoReturnable<Float> cir) {
         cir.setReturnValue(ShieldSystem.absorb((LivingEntity)(Object)this, cir.getReturnValueF()));
     }
+    // Save the exact remaining shield and its previous max so relog/restart
+    // cannot refill a damaged blue shield for free.
+    @Inject(method = "writeCustomData", at = @At("TAIL"))
+    private void shmingledorph$writeShield(WriteView view, CallbackInfo ci) {
+        float max = shmingledorph$getShieldMax();
+        if (max > 0) {
+            view.putFloat("shmingledorph_blue_shield", shmingledorph$getShield());
+            view.putFloat("shmingledorph_blue_shield_max", max);
+        }
+    }
+
+    @Inject(method = "readCustomData", at = @At("TAIL"))
+    private void shmingledorph$readShield(ReadView view, CallbackInfo ci) {
+        float max = Math.max(0f, view.getFloat("shmingledorph_blue_shield_max", 0f));
+        float value = Math.max(0f, Math.min(max,
+            view.getFloat("shmingledorph_blue_shield", 0f)));
+        shmingledorph$setShieldMax(max);
+        shmingledorph$setShield(value);
+    }
+
 }
