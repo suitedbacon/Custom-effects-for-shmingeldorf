@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Initial playable mechanics: registered effects, Cursed scoreboard integration,
@@ -29,6 +31,7 @@ public final class ShmingledorphEffects implements ModInitializer {
     public static final Map<String, RegistryEntry<StatusEffect>> EFFECTS = new LinkedHashMap<>();
     private static final Map<UUID, Integer> SOUND_COOLDOWNS = new HashMap<>();
     private static final Random RANDOM = new Random();
+    private static final Set<UUID> IMMORTAL_ZERO = new HashSet<>();
 
     private static void register(String name, int color, StatusEffectCategory category) {
         var effect = Registry.register(Registries.STATUS_EFFECT,
@@ -63,6 +66,17 @@ public final class ShmingledorphEffects implements ModInitializer {
             return false;
         });
 
+        // Phase 1: Immortality intercepts a genuine fatal hit. Keep a living
+        // health floor of one point to prevent vanilla's next-tick death check.
+        // Track the logically zero state so expiry kills unless healed.
+        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+            if (!(entity instanceof ServerPlayerEntity player)) return true;
+            if (!player.hasStatusEffect(EFFECTS.get("immortality"))) return true;
+            IMMORTAL_ZERO.add(player.getUuid());
+            player.setHealth(1.0f);
+            return false;
+        });
+
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
             if (!player.hasStatusEffect(EFFECTS.get("cursed"))) return;
@@ -93,6 +107,15 @@ public final class ShmingledorphEffects implements ModInitializer {
     }
 
     private static void tick(ServerPlayerEntity player) {
+        if (IMMORTAL_ZERO.contains(player.getUuid())) {
+            if (player.getHealth() > 1.0f) {
+                IMMORTAL_ZERO.remove(player.getUuid()); // Healed out of the zero state.
+            } else if (!player.hasStatusEffect(EFFECTS.get("immortality"))) {
+                IMMORTAL_ZERO.remove(player.getUuid());
+                run(player, "kill @s");
+                return;
+            }
+        }
         // Stunned phase 1: server-enforced severe movement, attack, and mining
         // penalties. Full stun still needs server interaction hooks and client
         // input blocking; do not mistake this for complete paralysis.
