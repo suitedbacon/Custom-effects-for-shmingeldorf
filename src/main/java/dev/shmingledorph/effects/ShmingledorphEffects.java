@@ -93,6 +93,14 @@ public final class ShmingledorphEffects implements ModInitializer {
     }
 
     private static void tick(ServerPlayerEntity player) {
+        // Stunned phase 1: server-enforced severe movement, attack, and mining
+        // penalties. Full stun still needs server interaction hooks and client
+        // input blocking; do not mistake this for complete paralysis.
+        if (player.hasStatusEffect(EFFECTS.get("stunned")) && player.age % 20 == 0) {
+            run(player, "effect give @s minecraft:slowness 2 255 true");
+            run(player, "effect give @s minecraft:mining_fatigue 2 255 true");
+            run(player, "effect give @s minecraft:weakness 2 255 true");
+        }
         var omen = player.getStatusEffect(EFFECTS.get("void_omen"));
         if (omen != null && player.age % 80 == 0) {
             int level = Math.min(5, omen.getAmplifier() + 1);
