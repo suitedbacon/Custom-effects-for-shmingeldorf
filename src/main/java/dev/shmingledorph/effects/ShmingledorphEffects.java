@@ -2,6 +2,7 @@ package dev.shmingledorph.effects;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.registry.Registries;
@@ -11,10 +12,20 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.HashMap;
 
+/**
+ * Initial playable mechanics: registered effects, Cursed scoreboard integration,
+ * player-only hallucination sounds and Void Omen darkness.
+ * Remaining mechanics are explicitly not implemented yet.
+ */
 public final class ShmingledorphEffects implements ModInitializer {
     public static final String MOD_ID = "shmingledorph";
     public static final Map<String, RegistryEntry<StatusEffect>> EFFECTS = new LinkedHashMap<>();
+    private static final Map<UUID, Integer> SOUND_COOLDOWNS = new HashMap<>();
+    private static final Random RANDOM = new Random();
 
     private static void register(String name, int color, StatusEffectCategory category) {
         var effect = Registry.register(Registries.STATUS_EFFECT,
@@ -36,20 +47,56 @@ public final class ShmingledorphEffects implements ModInitializer {
         register("nimble", 0x8CEAC8, StatusEffectCategory.BENEFICIAL);
         register("cursed", 0x4A1324, StatusEffectCategory.HARMFUL);
 
-        // Only an actual death triggers the curse; totems and prevented lethal
-        // damage do not fire this callback. The existing SMP life system
-        // handles transferring players to Death's Domain.
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (!(entity instanceof ServerPlayerEntity player)) return;
             if (!player.hasStatusEffect(EFFECTS.get("cursed"))) return;
             var server = player.getServer();
             if (server == null) return;
-            String name = player.getGameProfile().getName();
-            server.getCommandManager().executeWithPrefix(
-                server.getCommandSource().withLevel(4),
-                "scoreboard players set " + name + " life 0"
-            );
+            // Existing SMP datapack handles Death's Domain when life reaches zero.
+            run(player, "scoreboard players set @s life 0");
         });
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            for (var player : server.getPlayerManager().getPlayerList()) tick(player);
+        });
+    }
+
+    private static void run(ServerPlayerEntity player, String command) {
+        var server = player.getServer();
+        if (server == null) return;
+        server.getCommandManager().executeWithPrefix(
+            server.getCommandSource().withLevel(4),
+            "execute as " + player.getGameProfile().getName() + " at @s run " + command
+        );
+    }
+
+    private static void tick(ServerPlayerEntity player) {
+        var omen = player.getStatusEffect(EFFECTS.get("void_omen"));
+        if (omen != null && player.age % 80 == 0) {
+            int level = Math.min(5, omen.getAmplifier() + 1);
+            run(player, "effect give @s minecraft:darkness " + (5 + level) + " 0 true");
+        }
+
+        boolean quiet = player.hasStatusEffect(EFFECTS.get("quiet_hallucination"));
+        boolean hall = player.hasStatusEffect(EFFECTS.get("hallucinating"));
+        if (!quiet && !hall && omen == null) {
+            SOUND_COOLDOWNS.remove(player.getUuid());
+            return;
+        }
+        int remaining = SOUND_COOLDOWNS.getOrDefault(player.getUuid(), 0) - 1;
+        if (remaining > 0) {
+            SOUND_COOLDOWNS.put(player.getUuid(), remaining);
+            return;
+        }
+        SOUND_COOLDOWNS.put(player.getUuid(), quiet ? 65 + RANDOM.nextInt(160) : 110 + RANDOM.nextInt(240));
+        String[] sounds = quiet
+            ? new String[]{"minecraft:block.wooden_door.open", "minecraft:block.chest.open",
+                "minecraft:block.glass.break", "minecraft:block.wood.break"}
+            : new String[]{"minecraft:ambient.cave", "minecraft:entity.enderman.ambient",
+                "minecraft:entity.creeper.primed", "minecraft:entity.warden.ambient"};
+        String sound = sounds[RANDOM.nextInt(sounds.length)];
+        // playsound targets only the affected player, never the surrounding players.
+        run(player, "playsound " + sound + " ambient @s ~ ~ ~ 0.8 1");
     }
 
     private static final class BasicEffect extends StatusEffect {
