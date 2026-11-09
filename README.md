@@ -1,7 +1,35 @@
-# Shmingledorph Effects
+# Shmingledorph Effects (Fabric 1.21.11)
 
-Fabric mod for Minecraft 1.21.11. **Work in progress, not a complete or tested release.**
+**Status: development build. NOT ready for SMP deployment.**
 
-Planned effects: Flashed, Hallucinating, Quiet Hallucination, Void Omen, Stunned, Shield, Immortality, Inverted, Vulnerable, Nimble, Cursed.
+This repository is for the Shmingledorph SMP custom effects mod.
 
-Cursed must set the existing `life` scoreboard objective to zero **only on actual death**; the SMP handles Death's Domain. Other mechanics require client and damage hooks. GitHub Actions attempts compilation on pushes; a green build alone does not imply all mechanics work.
+## Effects registered
+`shmingledorph:flashed`, `hallucinating`, `quiet_hallucination`, `void_omen`, `stunned`, `shield`, `immortality`, `inverted`, `vulnerable`, `nimble`, `cursed`.
+
+Example: `/effect give @s shmingledorph:cursed 60 0`
+
+## Mechanics implemented so far (unverified in-game)
+- Cursed: after an actual player death, sets the dying player's existing `life` scoreboard to 0. The SMP's existing Death's Domain system must perform the transfer.
+- Hallucinating: occasional randomized vanilla sound, heard by the affected player.
+- Quiet Hallucination: occasional realistic sounds, **but not yet hidden or milk-resistant**.
+- Void Omen: applies repeated vanilla Darkness and participates in random sounds.
+
+## Not yet implemented
+- Flashed custom screen overlay.
+- Hidden persistent Quiet Hallucination state, immunity to milk, and specialized removal command.
+- Stunned input and server-side action restrictions.
+- Shield separate blue heart pool, damage absorption, healing, and conversion.
+- Immortality lethal damage interception and zero-HP behavior.
+- Inverted controls.
+- Vulnerable damage multiplier.
+- Nimble dodge chance.
+- Void Omen's full custom visuals.
+- Thorough integration tests for Cursed with the SMP lives datapack.
+
+## Build
+GitHub Actions: [Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions).
+The workflow attempts `gradle build` with Java 21 and uploads `build/libs/*.jar` on success. **A successful compilation does not mean the unimplemented mechanics work.**
+
+## Safety
+Test on a disposable world with a copy of your datapack and scoreboard before deploying. Especially test `life` zero and death/respawn transitions.
