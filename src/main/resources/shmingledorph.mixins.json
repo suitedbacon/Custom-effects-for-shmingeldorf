@@ -2,7 +2,18 @@
   "required": true,
   "package": "dev.shmingledorph.effects.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["LivingEntityDamageMixin"],
-  "client": ["KeyboardInputMixin"],
-  "injectors": { "defaultRequire": 1 }
+  "mixins": [
+    "LivingEntityDamageMixin",
+    "LivingEntityShieldMixin",
+    "InstantHealthShieldMixin",
+    "StunnedServerNetworkMixin"
+  ],
+  "client": [
+    "KeyboardInputMixin",
+    "VoidFogMixin",
+    "StunnedClientMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

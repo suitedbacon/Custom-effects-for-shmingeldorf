@@ -9,5 +9,7 @@
   "effect.shmingledorph.inverted": "Inverted",
   "effect.shmingledorph.vulnerable": "Vulnerable",
   "effect.shmingledorph.nimble": "Nimble",
-  "effect.shmingledorph.cursed": "Cursed"
+  "effect.shmingledorph.cursed": "Cursed",
+  "effect.shmingledorph.true_blindness": "True Blindness",
+  "key.shmingledorph.flash_palette": "Toggle Flash Color (White / Dark Amber)"
 }
