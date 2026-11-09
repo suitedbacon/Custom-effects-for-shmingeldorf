@@ -6,8 +6,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.data.TrackedDataHandler;
-import net.minecraft.entity.data.TrackedDataHandlers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,9 +17,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityShieldMixin implements ShieldAccess {
     @Unique private static final TrackedData<Float> SHM_SHIELD =
-        DataTracker.registerData(LivingEntity.class, TrackedDataHandler.FLOAT);
+        DataTracker.registerData(LivingEntity.class, TrackedDataHandlerRegistry.FLOAT);
     @Unique private static final TrackedData<Float> SHM_SHIELD_MAX =
-        DataTracker.registerData(LivingEntity.class, TrackedDataHandler.FLOAT);
+        DataTracker.registerData(LivingEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
     @Inject(method = "initDataTracker", at = @At("TAIL"))
     private void shmingledorph$initShield(DataTracker.Builder builder, CallbackInfo ci) {
