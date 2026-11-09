@@ -27,4 +27,13 @@ public final class FlashAccessibility {
     }
 
     public static boolean amber() { return amber; }
+
+    public static void toggle() {
+        amber = !amber;
+        try {
+            Files.writeString(FILE,
+                "{\\n  \\"flashColor\\": \\"" + (amber ? "amber" : "white") + "\\"\\n}\\n",
+                StandardCharsets.UTF_8);
+        } catch (IOException ignored) {}
+    }
 }
