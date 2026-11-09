@@ -33,3 +33,6 @@ The workflow attempts `gradle build` with Java 21 and uploads `build/libs/*.jar`
 
 ## Safety
 Test on a disposable world with a copy of your datapack and scoreboard before deploying. Especially test `life` zero and death/respawn transitions.
+
+## Build validation
+Automated build diagnostics are performed on pull request branches before promoting a tested release.
