@@ -11,7 +11,8 @@
   "client": [
     "KeyboardInputMixin",
     "VoidFogMixin",
-    "StunnedClientMixin"
+    "StunnedClientMixin",
+    "InGameHudShieldMixin"
   ],
   "injectors": {
     "defaultRequire": 1
