@@ -32,7 +32,7 @@ public final class FlashAccessibility {
         amber = !amber;
         try {
             Files.writeString(FILE,
-                "{\\n  \\"flashColor\\": \\"" + (amber ? "amber" : "white") + "\\"\\n}\\n",
+                "{\n  \"flashColor\": \"" + (amber ? "amber" : "white") + "\"\n}\n",
                 StandardCharsets.UTF_8);
         } catch (IOException ignored) {}
     }
