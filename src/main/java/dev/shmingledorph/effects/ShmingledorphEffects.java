@@ -48,7 +48,8 @@ public final class ShmingledorphEffects implements ModInitializer {
         register("quiet_hallucination", 0x39343F, StatusEffectCategory.HARMFUL);
         register("void_omen", 0x151021, StatusEffectCategory.HARMFUL);
         register("stunned", 0xA6A6A6, StatusEffectCategory.HARMFUL);
-        register("shield", 0x55DDF5, StatusEffectCategory.BENEFICIAL);
+        register("shield", 0x18E6F7, StatusEffectCategory.BENEFICIAL);
+        register("anti_gravity", 0x72CCFF, StatusEffectCategory.BENEFICIAL);
         register("immortality", 0xD8CFA0, StatusEffectCategory.BENEFICIAL);
         register("inverted", 0xC35DEB, StatusEffectCategory.HARMFUL);
         register("vulnerable", 0xB33044, StatusEffectCategory.HARMFUL);

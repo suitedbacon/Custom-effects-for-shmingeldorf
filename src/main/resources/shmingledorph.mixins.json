@@ -6,7 +6,9 @@
     "LivingEntityDamageMixin",
     "LivingEntityShieldMixin",
     "InstantHealthShieldMixin",
-    "StunnedServerNetworkMixin"
+    "StunnedServerNetworkMixin",
+    "AntiGravityPhysicsMixin",
+    "AntiGravityFallMixin"
   ],
   "client": [
     "KeyboardInputMixin",
