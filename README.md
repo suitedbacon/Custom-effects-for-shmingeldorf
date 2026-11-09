@@ -1,9 +1,9 @@
-# Shmingledorph Effects v0.2.1-dev — Minecraft Java 1.21.11 / Fabric
+# Shmingledorph Effects v0.2.2-dev — Minecraft Java 1.21.11 / Fabric
 
 **Development test release, not approved for production SMP.** GitHub Actions compiles the mod and runs a dedicated server startup smoke test. Client visuals, multiplayer behavior, and cross-mod integrations still require in-game testing.
 
 ## Installation
-Download the latest successful **Build Fabric mod** artifact from [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions). Unzip the artifact; install the non-sources `shmingledorph-effects-0.2.1-dev.jar` in the `mods` folders of both Minecraft client and Fabric server. Requires Fabric Loader 0.18.4+, Fabric API, Java 21 and Minecraft 1.21.11. Do not install the earlier 0.1.0 JAR alongside this one.
+Download the latest successful **Build Fabric mod** artifact from [GitHub Actions](https://github.com/suitedbacon/Custom-effects-for-shmingeldorf/actions). Unzip the artifact; install the non-sources `shmingledorph-effects-0.2.2-dev.jar` in the `mods` folders of both Minecraft client and Fabric server. Requires Fabric Loader 0.18.4+, Fabric API, Java 21 and Minecraft 1.21.11. Do not install the earlier 0.1.0 JAR alongside this one.
 
 ## Commands
 ```mcfunction
@@ -40,5 +40,15 @@ Download the latest successful **Build Fabric mod** artifact from [GitHub Action
 ### For developers
 Run `gradle build` on Java 21. CI builds the remapped JAR and runs an automated Fabric dedicated-server startup smoke test.
 
-## Shield HUD hotfix (0.2.1-dev)
+## Shield HUD hotfix (0.2.2-dev)
 The old independent HUD overlay positioned blue hearts using a hard-coded `screenHeight - 39`, extra armor offset, and `10px` rows. That could drift upward or collide with gold Absorption when Shield strength increased. This hotfix renders inside vanilla `InGameHud.renderHealthBar` using its `x, y, lines` values. Vanilla gold hearts are moved into their own rows above blue Shield hearts; regular health stays where Minecraft originally draws it. Normal health plus Shield X and Absorption are now laid out as separate contiguous 10-heart rows. No shield damage/healing balance mechanics were changed.
+
+## v0.2.2-dev Survival-mode crash fix
+In v0.2.1-dev, switching to Survival could crash with
+`java.lang.IllegalAccessError` involving `net.minecraft.class_329$class_6411` and
+`org.spongepowered.asm.synthetic.args.Args$5`.
+The Shield gold-heart reflow mixin calls a private vanilla inner enum via
+Mixin `@ModifyArgs`. This version adds a Fabric access widener for
+`InGameHud$HeartType` so the generated argument class can access it legally.
+No gameplay balance changes. Validate this specifically in **Survival mode**, including Shield X
+and Absorption, before deploying to the SMP.
