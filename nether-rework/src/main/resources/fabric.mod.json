@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "nether_rework",
+  "version": "${version}",
+  "name": "Nether Entity Rework",
+  "description": "Nether mob command families, ready for custom variants.",
+  "environment": "*",
+  "entrypoints": { "main": ["com.suitedbacon.netherrework.NetherRework"] },
+  "depends": { "fabricloader": ">=0.18.0", "minecraft": "~1.21.11", "java": ">=21", "fabric-api": "*" }
+}
