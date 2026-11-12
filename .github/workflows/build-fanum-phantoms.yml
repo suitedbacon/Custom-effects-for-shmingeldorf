@@ -30,14 +30,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: fanum-phantoms-fabric-1.21.11
-          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.0.jar
+          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.1.jar
       - name: Commit compiled JAR for direct download
         working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p fanum-phantoms/dist
-          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.0.jar fanum-phantoms/dist/fanum-phantoms-0.1.0.jar
-          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.0.jar
+          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.1.jar fanum-phantoms/dist/fanum-phantoms-0.1.1.jar
+          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.1.jar
           git commit -m "Store compiled Fanum Phantom JAR [skip ci]" || true
           git push
