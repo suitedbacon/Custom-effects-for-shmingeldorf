@@ -8,6 +8,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -25,7 +26,7 @@ public class FanumMod implements ModInitializer {
 
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(literal("fanum")
-            .requires(source -> source.hasPermissionLevel(2))
+            .requires(CommandManager.requirePermissionLevel(CommandManager.GAMEMASTERS_CHECK))
             .executes(ctx -> summon(ctx.getSource(), false))
             .then(literal("normal").executes(ctx -> summon(ctx.getSource(), false)))
             .then(literal("eyestrain").executes(ctx -> summon(ctx.getSource(), true)))
