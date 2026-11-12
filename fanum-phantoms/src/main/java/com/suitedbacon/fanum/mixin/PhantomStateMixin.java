@@ -1,5 +1,6 @@
 package com.suitedbacon.fanum.mixin;
 
+import com.suitedbacon.fanum.api.FanumRenderState;
 import net.minecraft.client.render.entity.state.PhantomEntityRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;

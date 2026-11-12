@@ -1,7 +1,7 @@
 package com.suitedbacon.fanum;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.suitedbacon.fanum.mixin.FanumEyestrain;
+import com.suitedbacon.fanum.api.FanumEyestrain;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.entity.EntityType;

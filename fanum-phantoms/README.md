@@ -10,3 +10,7 @@ Commands (operator permission level 2):
 Eyestrain Phantoms have the `fanum_eyestrain` command tag and synchronized client render data to ensure the texture is visible in multiplayer. Future variants can be added independently.
 
 Build: `gradle build` from this directory with Java 21 and Gradle 9.2.1. 
+
+## v0.1.2
+- Move `FanumEyestrain` and `FanumRenderState` interfaces from the reserved Mixin package to `com.suitedbacon.fanum.api`, fixing the Fabric bootstrap `IllegalClassLoadError`.
+- The GitHub build runs a client startup smoke test before publishing a JAR.

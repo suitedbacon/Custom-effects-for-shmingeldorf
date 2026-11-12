@@ -1,6 +1,7 @@
 package com.suitedbacon.fanum.mixin;
 
 import com.suitedbacon.fanum.FanumMod;
+import com.suitedbacon.fanum.api.FanumEyestrain;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.data.DataTracker;

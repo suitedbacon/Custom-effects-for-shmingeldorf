@@ -27,17 +27,56 @@ jobs:
         with:
           gradle-version: '9.2.1'
       - run: gradle build --stacktrace
+      - name: Validate compiled mod archive
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile, json, pathlib, struct
+          p=pathlib.Path("build/libs/fanum-phantoms-0.1.2.jar")
+          with zipfile.ZipFile(p) as jar:
+              names=set(jar.namelist())
+              for classname in ("FanumEyestrain", "FanumRenderState"):
+                  assert "com/suitedbacon/fanum/api/"+classname+".class" in names, classname+" missing"
+                  assert "com/suitedbacon/fanum/mixin/"+classname+".class" not in names, classname+" in invalid package"
+              for filename in ("fanum.mixins.json", "fanum.client.mixins.json"):
+                  config=json.loads(jar.read(filename))
+                  assert config["package"]=="com.suitedbacon.fanum.mixin"
+                  assert all("Fanum" not in c for c in config.get("mixins",[])+config.get("client",[]))
+              data=jar.read("assets/fanum/textures/entity/eyestrain.png")
+              assert data[:8] == bytes.fromhex("89504e470d0a1a0a"), "Invalid texture PNG signature"
+              assert struct.unpack(">II",data[16:24])==(64,64), "Incorrect Phantom texture dimensions"
+          print("Fanum archive validation passed")
+          PY
+      - name: Launch Minecraft client to verify Mixin bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v xvfb-run >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y xvfb)
+          set +e
+          timeout 120s xvfb-run -a -s "-screen 0 1280x720x24" gradle runClient --console=plain > /tmp/fanum-client.log 2>&1
+          code=$?
+          set -e
+          tail -n 100 /tmp/fanum-client.log
+          if grep -Eiq "Mixin transformation of|IllegalClassLoadError|Mixin apply failed|MixinTransformerError|InjectionError|NoSuchMethodError|NoClassDefFoundError|BootstrapMethodError|Caused by:.*Exception|Failed to create window|Could not initialize class" /tmp/fanum-client.log; then
+             echo "Detected client crash or mixin failure" >&2
+             exit 1
+          fi
+          if ! grep -Eiq "Backend library: LWJGL|OpenGL version" /tmp/fanum-client.log; then
+             echo "Client never reached graphics initialization (code $code)" >&2
+             exit 1
+          fi
+          echo "Minecraft client reached renderer initialization with Fanum loaded."
       - uses: actions/upload-artifact@v4
         with:
           name: fanum-phantoms-fabric-1.21.11
-          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.1.jar
+          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.2.jar
       - name: Commit compiled JAR for direct download
         working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p fanum-phantoms/dist
-          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.1.jar fanum-phantoms/dist/fanum-phantoms-0.1.1.jar
-          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.1.jar
+          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.2.jar fanum-phantoms/dist/fanum-phantoms-0.1.2.jar
+          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.2.jar
           git commit -m "Store compiled Fanum Phantom JAR [skip ci]" || true
           git push

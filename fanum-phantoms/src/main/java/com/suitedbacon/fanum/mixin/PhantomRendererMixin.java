@@ -1,5 +1,7 @@
 package com.suitedbacon.fanum.mixin;
 
+import com.suitedbacon.fanum.api.FanumEyestrain;
+import com.suitedbacon.fanum.api.FanumRenderState;
 import net.minecraft.client.render.entity.PhantomEntityRenderer;
 import net.minecraft.client.render.entity.state.PhantomEntityRenderState;
 import net.minecraft.entity.mob.PhantomEntity;
