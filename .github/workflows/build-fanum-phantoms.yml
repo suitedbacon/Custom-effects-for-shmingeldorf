@@ -32,6 +32,7 @@ jobs:
           name: fanum-phantoms-fabric-1.21.11
           path: fanum-phantoms/build/libs/fanum-phantoms-0.1.0.jar
       - name: Commit compiled JAR for direct download
+        working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
