@@ -27,7 +27,7 @@ public class NetherRework implements ModInitializer {
 
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher, String command, EntityType<?> type) {
         dispatcher.register(CommandManager.literal(command)
-            .requires(source -> source.hasPermissionLevel(2))
+            .requires(source -> source.hasPermission(net.minecraft.command.permission.PermissionLevel.GAMEMASTERS))
             .then(CommandManager.literal("normal")
                 .executes(context -> summon(context.getSource(), type, 1)))
             .then(CommandManager.literal("horde")
