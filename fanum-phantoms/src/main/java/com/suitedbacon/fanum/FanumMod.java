@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.suitedbacon.fanum.api.FanumEyestrain;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.mob.PhantomEntity;
@@ -22,6 +23,7 @@ public class FanumMod implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> register(dispatcher));
+        ServerTickEvents.END_SERVER_TICK.register(EyestrainEncounter::tick);
     }
 
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -45,6 +47,7 @@ public class FanumMod implements ModInitializer {
         if (eyestrain) {
             phantom.addCommandTag(EYESTRAIN);
             ((FanumEyestrain) phantom).fanum$setEyestrain(true);
+            phantom.setPersistent();
         }
         if (!world.spawnEntity(phantom)) {
             source.sendError(Text.literal("Could not summon Phantom."));

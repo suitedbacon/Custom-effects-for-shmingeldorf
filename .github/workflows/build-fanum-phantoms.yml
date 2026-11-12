@@ -32,7 +32,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import zipfile, json, pathlib, struct
-          p=pathlib.Path("build/libs/fanum-phantoms-0.1.2.jar")
+          p=pathlib.Path("build/libs/fanum-phantoms-0.2.0.jar")
           with zipfile.ZipFile(p) as jar:
               names=set(jar.namelist())
               for classname in ("FanumEyestrain", "FanumRenderState"):
@@ -42,6 +42,9 @@ jobs:
                   config=json.loads(jar.read(filename))
                   assert config["package"]=="com.suitedbacon.fanum.mixin"
                   assert all("Fanum" not in c for c in config.get("mixins",[])+config.get("client",[]))
+              assert "com/suitedbacon/fanum/EyestrainEncounter.class" in names
+              assert "com/suitedbacon/fanum/mixin/EyestrainHealingMixin.class" in names
+              assert "EyestrainHealingMixin" in json.loads(jar.read("fanum.mixins.json"))["mixins"]
               data=jar.read("assets/fanum/textures/entity/eyestrain.png")
               assert data[:8] == bytes.fromhex("89504e470d0a1a0a"), "Invalid texture PNG signature"
               assert struct.unpack(">II",data[16:24])==(64,64), "Incorrect Phantom texture dimensions"
@@ -69,14 +72,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: fanum-phantoms-fabric-1.21.11
-          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.2.jar
+          path: fanum-phantoms/build/libs/fanum-phantoms-0.2.0.jar
       - name: Commit compiled JAR for direct download
         working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p fanum-phantoms/dist
-          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.2.jar fanum-phantoms/dist/fanum-phantoms-0.1.2.jar
-          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.2.jar
+          cp fanum-phantoms/build/libs/fanum-phantoms-0.2.0.jar fanum-phantoms/dist/fanum-phantoms-0.2.0.jar
+          git add -f fanum-phantoms/dist/fanum-phantoms-0.2.0.jar
           git commit -m "Store compiled Fanum Phantom JAR [skip ci]" || true
           git push

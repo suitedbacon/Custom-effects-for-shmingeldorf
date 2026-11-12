@@ -4,6 +4,8 @@ on:
     branches: [fanum-phantoms-build]
     paths:
       - 'fanum-phantoms/scripts/command_smoke.py'
+      - 'fanum-phantoms/src/**'
+      - 'fanum-phantoms/gradle.properties'
       - '.github/workflows/test-fanum-commands.yml'
   workflow_dispatch:
 permissions:

@@ -3,7 +3,8 @@
   "package": "com.suitedbacon.fanum.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "PhantomEntityMixin"
+    "PhantomEntityMixin",
+    "EyestrainHealingMixin"
   ],
   "injectors": {
     "defaultRequire": 1
