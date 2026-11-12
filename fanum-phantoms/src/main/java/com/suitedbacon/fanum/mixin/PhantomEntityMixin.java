@@ -37,7 +37,7 @@ public abstract class PhantomEntityMixin implements FanumEyestrain {
     @Inject(method = "tick", at = @At("TAIL"))
     private void fanum$updateTag(CallbackInfo info) {
         Entity entity = (Entity)(Object)this;
-        if (entity.getWorld() instanceof ServerWorld) {
+        if (entity.getEntityWorld() instanceof ServerWorld) {
             boolean tagged = entity.getCommandTags().contains(FanumMod.EYESTRAIN);
             if (tagged != fanum$isEyestrain()) fanum$setEyestrain(tagged);
         }
