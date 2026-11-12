@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "fanum",
+  "version": "${version}",
+  "name": "Fanum Phantom Rework",
+  "description": "Custom Phantom variants and /fanum commands.",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.suitedbacon.fanum.FanumMod"
+    ]
+  },
+  "mixins": [
+    "fanum.mixins.json",
+    "fanum.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

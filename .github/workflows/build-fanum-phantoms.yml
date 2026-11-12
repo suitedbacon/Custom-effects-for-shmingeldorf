@@ -1,0 +1,42 @@
+name: Build Fanum Phantom Rework
+on:
+  push:
+    branches: [fanum-phantoms-build]
+    paths:
+      - 'fanum-phantoms/src/**'
+      - 'fanum-phantoms/build.gradle'
+      - 'fanum-phantoms/gradle.properties'
+      - 'fanum-phantoms/settings.gradle'
+      - '.github/workflows/build-fanum-phantoms.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fanum-phantoms
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - run: gradle build --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fanum-phantoms-fabric-1.21.11
+          path: fanum-phantoms/build/libs/fanum-phantoms-0.1.0.jar
+      - name: Commit compiled JAR for direct download
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p fanum-phantoms/dist
+          cp fanum-phantoms/build/libs/fanum-phantoms-0.1.0.jar fanum-phantoms/dist/fanum-phantoms-0.1.0.jar
+          git add -f fanum-phantoms/dist/fanum-phantoms-0.1.0.jar
+          git commit -m "Store compiled Fanum Phantom JAR [skip ci]" || true
+          git push

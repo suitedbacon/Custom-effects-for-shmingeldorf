@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.suitedbacon.fanum.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "PhantomRendererMixin",
+    "PhantomStateMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
