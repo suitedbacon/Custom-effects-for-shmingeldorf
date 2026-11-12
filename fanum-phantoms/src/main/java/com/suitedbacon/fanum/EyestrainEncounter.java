@@ -57,9 +57,9 @@ public final class EyestrainEncounter {
 
         Game(PhantomEntity phantom, ServerPlayerEntity player) {
             this.phantomId = phantom.getUuid();
-            this.world = player.getServerWorld();
+            this.world = player.getEntityWorld();
             this.previousAiDisabled = phantom.isAiDisabled();
-            Vec3d delta = phantom.getPos().subtract(player.getPos());
+            Vec3d delta = phantom.getEntityPos().subtract(player.getEntityPos());
             this.startAngle = Math.atan2(delta.z, delta.x);
         }
     }
@@ -105,7 +105,7 @@ public final class EyestrainEncounter {
     }
 
     private static void findEyestrain(ServerPlayerEntity player, Set<UUID> claimed) {
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getEntityWorld();
         Vec3d center = player.getEyePos();
         Box bounds = new Box(center.add(-DETECTION_RANGE, -DETECTION_RANGE, -DETECTION_RANGE),
                              center.add(DETECTION_RANGE, DETECTION_RANGE, DETECTION_RANGE));
@@ -127,7 +127,7 @@ public final class EyestrainEncounter {
         player.addCommandTag(ACTIVE_TAG);
         applyEffects(player);
         player.sendMessage(Text.literal("EYESTRAIN - DON'T LOOK AT IT").formatted(Formatting.DARK_RED), true);
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getEntityWorld();
         world.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PHANTOM_SWOOP, SoundCategory.HOSTILE, 1.8f, 0.65f);
     }
@@ -139,7 +139,7 @@ public final class EyestrainEncounter {
     }
 
     private static void step(ServerPlayerEntity player, Game game) {
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getEntityWorld();
         Entity entity = game.world.getEntity(game.phantomId);
         if (world != game.world || !(entity instanceof PhantomEntity phantom)
                 || !phantom.isAlive() || !eligible(player) || player.squaredDistanceTo(phantom) > 64 * 64
@@ -160,10 +160,10 @@ public final class EyestrainEncounter {
         // Phase 2: once close enough, orbit slowly at eye level.
         Vec3d eye = player.getEyePos();
         Vec3d goal;
-        double distanceToPlayer = phantom.getPos().distanceTo(eye);
+        double distanceToPlayer = phantom.getEntityPos().distanceTo(eye);
         if (game.ticks < 40 && distanceToPlayer > ORBIT_RADIUS + 0.4) {
-            Vec3d approach = eye.subtract(phantom.getPos()).normalize();
-            goal = phantom.getPos().add(approach.multiply(Math.min(1.18, distanceToPlayer - ORBIT_RADIUS)));
+            Vec3d approach = eye.subtract(phantom.getEntityPos()).normalize();
+            goal = phantom.getEntityPos().add(approach.multiply(Math.min(1.18, distanceToPlayer - ORBIT_RADIUS)));
         } else {
             double theta = game.startAngle + game.ticks * ORBIT_SPEED;
             goal = eye.add(
@@ -211,7 +211,7 @@ public final class EyestrainEncounter {
         if (distanceSquared < 0.001 || distanceSquared > maxDistance * maxDistance) return false;
         Vec3d direction = player.getRotationVec(1.0F);
         if (direction.dotProduct(difference.normalize()) < minDot) return false;
-        HitResult hit = player.getServerWorld().raycast(
+        HitResult hit = player.getEntityWorld().raycast(
             new RaycastContext(origin, target, RaycastContext.ShapeType.COLLIDER,
                 RaycastContext.FluidHandling.NONE, player));
         return hit.getType() == HitResult.Type.MISS;
