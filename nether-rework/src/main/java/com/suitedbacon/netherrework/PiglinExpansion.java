@@ -1,7 +1,7 @@
 package com.suitedbacon.netherrework;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.entity.BannerPatterns;
@@ -186,7 +186,7 @@ public final class PiglinExpansion {
                 ItemStack banner = new ItemStack(Items.BLACK_BANNER);
                 banner.set(DataComponentTypes.BANNER_PATTERNS,
                     new BannerPatternsComponent.Builder()
-                        .add(world.getRegistryManager().getOrThrow(RegistryKeys.BANNER_PATTERN).getOrThrow(BannerPatterns.SNOUT), DyeColor.WHITE)
+                        .add(world.getRegistryManager().getOrThrow(RegistryKeys.BANNER_PATTERN).getOrThrow(BannerPatterns.PIGLIN), DyeColor.WHITE)
                         .build());
                 p.equipStack(EquipmentSlot.HEAD, banner);
                 ItemStack crossbow = new ItemStack(Items.CROSSBOW);
@@ -296,7 +296,7 @@ public final class PiglinExpansion {
                     if (piglin.getCommandTags().contains(PREFIX + "wildcard")) {
                         fireworkFromArrow(world, arrow, piglin);
                     } else {
-                        arrow.setDamage(arrow.getDamage() * 1.6);
+                        arrow.setDamage(5.0);
                     }
                 }
             }
@@ -407,7 +407,7 @@ public final class PiglinExpansion {
         if (state == null || tick > state.start + 135) {
             PlayerEntity target = nearestPlayer(world, charger, 20);
             if (target == null) return;
-            Vec3d dir = target.getPos().subtract(charger.getPos()).multiply(1, 0, 1);
+            Vec3d dir = target.getEntityPos().subtract(charger.getEntityPos()).multiply(1, 0, 1);
             if (dir.lengthSquared() < 0.01) return;
             state = new Charge(dir.normalize(), target.getUuid(), tick, tick, false);
             CHARGES.put(charger.getUuid(), state);
@@ -415,14 +415,13 @@ public final class PiglinExpansion {
         long phase = tick - state.start;
         if (phase < 34) {
             charger.getNavigation().stop();
-            Vec3d origin = charger.getPos();
+            Vec3d origin = charger.getEntityPos();
             for (int n = 1; n <= 16; n++) {
                 Vec3d point = origin.add(state.direction.multiply(n));
                 world.spawnParticles(ParticleTypes.FLAME, point.x, charger.getY() + 0.3, point.z, 1, 0.02, 0.04, 0.02, 0.0);
             }
         } else if (phase < 46) {
             charger.setVelocity(state.direction.multiply(1.75).add(0, charger.getVelocity().y, 0));
-            charger.velocityModified = true;
             if (!state.hit) {
                 for (PlayerEntity p : world.getPlayers()) {
                     if (!p.isCreative() && !p.isSpectator() && p.squaredDistanceTo(charger) < 6) {
@@ -440,9 +439,9 @@ public final class PiglinExpansion {
     private static void tickHarbinger(ServerWorld world, PiglinEntity harbinger, long tick) {
         PlayerEntity player = nearestPlayer(world, harbinger, 28);
         if (player == null) return;
-        Vec3d away = harbinger.getPos().subtract(player.getPos()).multiply(1, 0, 1);
+        Vec3d away = harbinger.getEntityPos().subtract(player.getEntityPos()).multiply(1, 0, 1);
         if (away.lengthSquared() > 0.01) {
-            Vec3d destination = harbinger.getPos().add(away.normalize().multiply(12));
+            Vec3d destination = harbinger.getEntityPos().add(away.normalize().multiply(12));
             harbinger.getNavigation().startMovingTo(destination.x, destination.y, destination.z, 1.5);
         }
         boolean otherPiglins = !world.getEntitiesByClass(PiglinEntity.class,
@@ -459,7 +458,7 @@ public final class PiglinExpansion {
             if (seconds == 10) harbinger.setCustomName(Text.literal("Harbinger - 10 seconds!"));
         }
         if (tick - clearAt >= 600) {
-            horde(world, harbinger.getPos(), 8);
+            horde(world, harbinger.getEntityPos(), 8);
             harbinger.setCustomName(Text.literal("Harbinger"));
             HARBINGER_CLEAR.remove(harbinger.getUuid());
         }
