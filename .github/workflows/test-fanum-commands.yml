@@ -1,0 +1,25 @@
+name: Test Fanum Commands In Minecraft Server
+on:
+  push:
+    branches: [fanum-phantoms-build]
+    paths:
+      - 'fanum-phantoms/scripts/command_smoke.py'
+      - '.github/workflows/test-fanum-commands.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fanum-command-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Start real Minecraft server and run Fanum commands
+        run: python3 fanum-phantoms/scripts/command_smoke.py
