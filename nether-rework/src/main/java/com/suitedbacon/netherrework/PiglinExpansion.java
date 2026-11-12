@@ -62,7 +62,7 @@ public final class PiglinExpansion {
                 return true;
             if (!source.isOf(DamageTypes.ARROW))
                 return true;
-            if (hasBarragemanNear(world, piglin, 24))
+            if (!piglin.getCommandTags().contains(PREFIX + "barrageman") && hasBarragemanNear(world, piglin, 24))
                 return false;
             PiglinEntity magic = findMagic(world, piglin, 15);
             if (magic == null) return true;
@@ -404,7 +404,7 @@ public final class PiglinExpansion {
 
     private static void tickCharger(ServerWorld world, PiglinEntity charger, long tick) {
         Charge state = CHARGES.get(charger.getUuid());
-        if (state == null || tick > state.start + 135) {
+        if (state == null || tick > state.start + 155) {
             PlayerEntity target = nearestPlayer(world, charger, 20);
             if (target == null) return;
             Vec3d dir = target.getEntityPos().subtract(charger.getEntityPos()).multiply(1, 0, 1);
@@ -413,14 +413,14 @@ public final class PiglinExpansion {
             CHARGES.put(charger.getUuid(), state);
         }
         long phase = tick - state.start;
-        if (phase < 34) {
+        if (phase < 50) {
             charger.getNavigation().stop();
             Vec3d origin = charger.getEntityPos();
             for (int n = 1; n <= 16; n++) {
                 Vec3d point = origin.add(state.direction.multiply(n));
                 world.spawnParticles(ParticleTypes.FLAME, point.x, charger.getY() + 0.3, point.z, 1, 0.02, 0.04, 0.02, 0.0);
             }
-        } else if (phase < 46) {
+        } else if (phase < 62) {
             charger.setVelocity(state.direction.multiply(1.75).add(0, charger.getVelocity().y, 0));
             if (!state.hit) {
                 for (PlayerEntity p : world.getPlayers()) {
