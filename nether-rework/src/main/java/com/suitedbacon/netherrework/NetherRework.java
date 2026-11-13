@@ -18,11 +18,12 @@ public class NetherRework implements ModInitializer {
     @Override
     public void onInitialize() {
         PiglinExpansion.initialize();
+        BlazeExpansion.initialize();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             registerPiggies(dispatcher);
             register(dispatcher, "mama", EntityType.MAGMA_CUBE);
             register(dispatcher, "skeledark", EntityType.WITHER_SKELETON);
-            register(dispatcher, "blast", EntityType.BLAZE);
+            registerBlast(dispatcher);
         });
     }
 
@@ -40,6 +41,19 @@ public class NetherRework implements ModInitializer {
             command.then(CommandManager.literal(variant).executes(context ->
                 PiglinExpansion.spawn(context.getSource().getWorld(), context.getSource().getPosition(), variant) != null ? 1 : 0));
         }
+        dispatcher.register(command);
+    }
+
+    private static void registerBlast(CommandDispatcher<ServerCommandSource> dispatcher) {
+        var command = CommandManager.literal("blast")
+            .requires(source -> source.getPermissions().hasPermission(
+                new net.minecraft.command.permission.Permission.Level(net.minecraft.command.permission.PermissionLevel.GAMEMASTERS)));
+        for (String variant : new String[] {"normal", "brute", "laser", "orbit"}) {
+            command.then(CommandManager.literal(variant).executes(context ->
+                BlazeExpansion.spawn(context.getSource().getWorld(), context.getSource().getPosition(), variant) != null ? 1 : 0));
+        }
+        command.then(CommandManager.literal("horde").executes(context ->
+            BlazeExpansion.horde(context.getSource().getWorld(), context.getSource().getPosition(), 8)));
         dispatcher.register(command);
     }
 
