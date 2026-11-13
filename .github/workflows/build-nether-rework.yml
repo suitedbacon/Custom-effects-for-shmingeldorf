@@ -23,5 +23,5 @@ jobs:
       - run: gradle build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: nether-rework-0.2.0-fabric-1.21.11
-          path: nether-rework/build/libs/nether-rework-0.2.0.jar
+          name: nether-rework-0.3.0-fabric-1.21.11
+          path: nether-rework/build/libs/nether-rework-0.3.0.jar
