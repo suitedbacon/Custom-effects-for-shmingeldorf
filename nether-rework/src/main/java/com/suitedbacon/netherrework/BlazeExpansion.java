@@ -196,8 +196,16 @@ public final class BlazeExpansion {
             double speed = brute ? 2.25 : 1.65;
             Vec3d delta = state.dashDirection.multiply(speed * 2);
             Vec3d next = blaze.getEntityPos().add(delta);
-            BlockPos front = BlockPos.ofFloored(next);
-            boolean wall = !world.getBlockState(front).getCollisionShape(world, front).isEmpty();
+            boolean wall = false;
+            double verticalOffset = blaze.getBodyY(0.5) - blaze.getY();
+            for (double step = 0.25; step <= delta.length() + 0.25; step += 0.35) {
+                BlockPos ahead = BlockPos.ofFloored(blaze.getEntityPos()
+                    .add(state.dashDirection.multiply(step)).add(0, verticalOffset, 0));
+                if (!world.getBlockState(ahead).getCollisionShape(world, ahead).isEmpty()) {
+                    wall = true;
+                    break;
+                }
+            }
             Entity collision = null;
             for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
                     blaze.getBoundingBox().stretch(delta).expand(0.8),
@@ -320,7 +328,7 @@ public final class BlazeExpansion {
             String command = "beam as @e[tag=nr_beam_shooter_temp,limit=1] toward "
                 + "@e[tag=nr_beam_target_temp,limit=1] "
                 + "width:1.3 length:38 damage:4 playerdamage:4 duration:46 "
-                + "interval:4 playerinterval:4 pierce:1 fire:true color:255,90,15";
+                + "interval:4 playerinterval:4 pierce:5 destructive:false fire:true color:255,90,15";
             var manager = world.getServer().getCommandManager();
             var source = world.getServer().getCommandSource();
             var parsed = manager.getDispatcher().parse(command, source);
