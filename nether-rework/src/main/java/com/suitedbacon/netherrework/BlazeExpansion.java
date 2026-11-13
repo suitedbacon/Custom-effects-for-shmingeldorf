@@ -266,9 +266,9 @@ public final class BlazeExpansion {
                 BlockPos pos = blaze.getBlockPos().add(dx, dy, dz);
                 var block = world.getBlockState(pos);
                 float hardness = block.getHardness(world, pos);
-                if (!block.isAir() && block.getBlock().hasBlockEntity() == false
+                if (!block.isAir() && world.getBlockEntity(pos) == null
                     && hardness >= 0 && hardness <= (brute ? 1.5f : 0.4f)
-                    && !world.getBlockState(pos).getFluidState().isEmpty() == false)
+                    && block.getFluidState().isEmpty())
                     world.breakBlock(pos, false, blaze);
             }
         blaze.damage(world, blaze.getDamageSources().generic(), brute ? 5.0f : 3.0f);
@@ -321,8 +321,12 @@ public final class BlazeExpansion {
                 + "@e[tag=nr_beam_target_temp,limit=1] "
                 + "width:1.3 length:38 damage:4 playerdamage:4 duration:46 "
                 + "interval:4 playerinterval:4 pierce:1 fire:true color:255,90,15";
-            return world.getServer().getCommandManager().executeWithPrefix(
-                world.getServer().getCommandSource(), command) > 0;
+            var manager = world.getServer().getCommandManager();
+            var source = world.getServer().getCommandSource();
+            var parsed = manager.getDispatcher().parse(command, source);
+            if (!parsed.getExceptions().isEmpty()) return false;
+            manager.parseAndExecute(source, command);
+            return true;
         } catch (Exception ex) {
             return false;
         } finally {
