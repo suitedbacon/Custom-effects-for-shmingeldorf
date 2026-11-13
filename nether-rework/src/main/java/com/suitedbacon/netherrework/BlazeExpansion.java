@@ -150,7 +150,7 @@ public final class BlazeExpansion {
                 state.lastSeen = tick;
                 tickDash(world, blaze, state, tick);
                 if (blaze.getCommandTags().contains(LASER)) tickLaser(world, blaze, state, tick);
-                if (blaze.getCommandTags().contains(ORBIT)) tickOrbit(world, blaze, tick);
+                if (blaze.getCommandTags().contains(ORBIT) && state.warningEnd == 0 && tick >= state.stunEnd) tickOrbit(world, blaze, tick);
             }
         }
         if (tick % 600 == 0) STATES.entrySet().removeIf(e -> tick - e.getValue().lastSeen > 1200);
