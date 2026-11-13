@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
 }
-version = '0.2.0'
+version = '0.3.0'
 group = 'com.suitedbacon'
 base { archivesName = 'nether-rework' }
 repositories { mavenCentral(); maven { url = 'https://maven.fabricmc.net/' } }
