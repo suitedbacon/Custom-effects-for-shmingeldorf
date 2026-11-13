@@ -1,0 +1,44 @@
+name: Smoke Test Nether Rework Server
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'nether-rework/**'
+      - '.github/workflows/smoke-nether-rework.yml'
+jobs:
+  server-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    defaults:
+      run:
+        working-directory: nether-rework
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Launch Minecraft dedicated server and inspect startup
+        shell: bash
+        run: |
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          set +e
+          timeout --signal=INT 120s gradle runServer --console=plain > server-smoke.log 2>&1
+          exit_code=$?
+          set -e
+          tail -n 85 server-smoke.log
+          echo "Runner exit: $exit_code"
+          grep -E 'Done \([0-9.]+s\)!' server-smoke.log
+          if grep -E 'Mixin apply failed|Exception in server tick loop|Failed to start the minecraft server' server-smoke.log; then
+            echo 'Server startup failed with a fatal error'
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nether-rework-server-smoke-log
+          path: nether-rework/server-smoke.log
