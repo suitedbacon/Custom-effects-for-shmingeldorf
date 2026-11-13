@@ -330,7 +330,7 @@ public final class BlazeExpansion {
                 + "width:1.3 length:38 damage:4 playerdamage:4 duration:46 "
                 + "interval:4 playerinterval:4 pierce:5 destructive:false fire:true color:255,90,15";
             var manager = world.getServer().getCommandManager();
-            var source = world.getServer().getCommandSource();
+            var source = world.getServer().getCommandSource().withWorld(world).withPosition(blaze.getEntityPos());
             var parsed = manager.getDispatcher().parse(command, source);
             if (!parsed.getExceptions().isEmpty()) return false;
             manager.parseAndExecute(source, command);
