@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "PhantomRendererMixin",
-    "PhantomStateMixin"
+    "PhantomStateMixin",
+    "LivingReplacementStateMixin",
+    "LivingReplacementRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

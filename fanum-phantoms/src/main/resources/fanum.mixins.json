@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "PhantomEntityMixin",
-    "EyestrainHealingMixin"
+    "EyestrainHealingMixin",
+    "MobReplacementMixin"
   ],
   "injectors": {
     "defaultRequire": 1

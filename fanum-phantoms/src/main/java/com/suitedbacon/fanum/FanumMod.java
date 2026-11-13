@@ -24,6 +24,7 @@ public class FanumMod implements ModInitializer {
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> register(dispatcher));
         ServerTickEvents.END_SERVER_TICK.register(EyestrainEncounter::tick);
+        ServerTickEvents.END_SERVER_TICK.register(ReplaceEncounter::tick);
     }
 
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -32,6 +33,7 @@ public class FanumMod implements ModInitializer {
             .executes(ctx -> summon(ctx.getSource(), false))
             .then(literal("normal").executes(ctx -> summon(ctx.getSource(), false)))
             .then(literal("eyestrain").executes(ctx -> summon(ctx.getSource(), true)))
+            .then(literal("replace").executes(ctx -> ReplaceEncounter.replace(ctx.getSource())))
             .then(literal("hallucination").executes(ctx -> hallucination(ctx.getSource()))));
     }
 

@@ -89,6 +89,7 @@ with log_path.open("w", encoding="utf-8") as log:
             run_command(sock, "fanum", "Summoned Phantom.")
             run_command(sock, "fanum normal", "Summoned Phantom.")
             run_command(sock, "fanum eyestrain", "Summoned Eyestrain Phantom.")
+            run_command(sock, "fanum replace", "Run /fanum replace as a player.")
             # Phantoms can despawn when this headless server has no players.
             # Their command tag is applied before spawn and verified by source inspection.
             # Do not confuse an entity search with command execution success.

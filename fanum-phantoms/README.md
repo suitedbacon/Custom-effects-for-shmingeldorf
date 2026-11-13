@@ -26,3 +26,12 @@ Build: `gradle build` from this directory with Java 21 and Gradle 9.2.1.
 - A server-side `fanum_eyestrain_active` command tag marks participants during the minigame and is removed on completion.
 
 The Eyestrain event runs server-side; install the JAR on both server and clients for multiplayer.
+
+## v0.3.0 — Replace (no entity spawned)
+
+- `/fanum replace` (operator, player-only): searches for an existing living mob within 20 blocks that stands in light level **7 or lower**. It chooses the nearest eligible mob; if none exists, nothing happens.
+- The mob retains its identity, hitbox, model, drops, and health, but for **13 seconds** the client renders its body completely black using a synchronized tracked flag.
+- It sprints and repeatedly pathfinds toward the player who ran the command, making loud Enderman screaming sounds roughly every 1.15 seconds.
+- After 13 seconds, on mob death, on the player's death/disconnect, or if the mob is too far away, its original skin, sprint state and former AI target are restored.
+- The command does **not spawn, summon, clone, or replace a physical entity**. Multiplayer requires clients and server to install the mod for the black model to be shown.
+- Works for vanilla and modded `MobEntity` renderers that use Minecraft's standard `LivingEntityRenderer` body render layer. Does not apply to items, boats, projectiles or players.
