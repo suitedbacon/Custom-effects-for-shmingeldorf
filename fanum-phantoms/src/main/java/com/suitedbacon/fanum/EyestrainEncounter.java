@@ -1,8 +1,11 @@
 package com.suitedbacon.fanum;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -19,48 +22,53 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
 /**
- * Eyestrain's server-authoritative encounter. No client packet or renderer mixin is
- * needed for the gameplay; the Phantom's normal entity position is synchronized.
+ * A single Eyestrain minigame per player, with any number of nearby Eyestrains.
+ * The FIRST surviving Eyestrain relentlessly follows the player's look direction;
+ * the rest orbit farther out around the same player.
  *
- * Trigger: direct, unobstructed eye contact from <= 32 blocks.
- * Encounter: a fast approach, then slow orbit for 20 seconds.
- * Damage: 1 health (half a heart) every 5 ticks of direct eye contact, bypassing
- * armor, Resistance, absorption and vanilla damage cooldown by directly reducing
- * health. A final vanilla void damage event handles death correctly.
+ * Gameplay is server-authoritative. The vanilla entity data tracker supplies
+ * the clients with the Phantom's location and black texture selection.
  */
 public final class EyestrainEncounter {
     private static final String ACTIVE_TAG = "fanum_eyestrain_active";
     private static final int DURATION = 400; // 20 seconds
-    private static final int DAMAGE_INTERVAL = 5; // four half-hearts each second
+    private static final int DAMAGE_INTERVAL = 3; // half heart per 0.15 seconds
     private static final int COOLDOWN = 240; // 12 seconds
     private static final double DETECTION_RANGE = 32.0;
-    private static final double ORBIT_RADIUS = 3.7;
-    private static final double ORBIT_SPEED = 0.028; // radians per tick
+    private static final double GROUP_RANGE = 36.0;
+    private static final double MAX_CHASE_DISTANCE = 64.0;
+    private static final double LEAD_DISTANCE = 4.1;
+    private static final double EXTRA_ORBIT_SPEED = 0.027;
     private static final Map<UUID, Game> ACTIVE = new HashMap<>();
     private static final Map<UUID, Long> COOLDOWN_UNTIL = new HashMap<>();
     private static long clock;
 
     private EyestrainEncounter() {}
 
-    private static final class Game {
+    /** The individual phantom's pre-encounter state must be restored on exit. */
+    private static final class Participant {
         final UUID phantomId;
-        final ServerWorld world;
         final boolean previousAiDisabled;
-        final double startAngle;
+
+        Participant(PhantomEntity phantom) {
+            phantomId = phantom.getUuid();
+            previousAiDisabled = phantom.isAiDisabled();
+        }
+    }
+
+    /** Ordered map: first living member is the one that stalks the crosshair. */
+    private static final class Game {
+        final ServerWorld world;
+        final LinkedHashMap<UUID, Participant> members = new LinkedHashMap<>();
         int ticks;
         int stareTicks;
 
-        Game(PhantomEntity phantom, ServerPlayerEntity player) {
-            this.phantomId = phantom.getUuid();
-            this.world = player.getEntityWorld();
-            this.previousAiDisabled = phantom.isAiDisabled();
-            Vec3d delta = phantom.getEntityPos().subtract(player.getEntityPos());
-            this.startAngle = Math.atan2(delta.z, delta.x);
+        Game(ServerWorld world) {
+            this.world = world;
         }
     }
 
@@ -70,15 +78,17 @@ public final class EyestrainEncounter {
 
     public static void tick(MinecraftServer server) {
         clock++;
-        // New encounters only begin for spectators/creative never and never for
-        // another player's already claimed Eyestrain phantom.
+
+        // Reserve all participants so two different players cannot control
+        // the same phantom simultaneously. A game may gain new members later.
         Set<UUID> claimed = new HashSet<>();
-        for (Game game : ACTIVE.values()) claimed.add(game.phantomId);
+        for (Game game : ACTIVE.values()) claimed.addAll(game.members.keySet());
+
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             UUID playerId = player.getUuid();
             Game game = ACTIVE.get(playerId);
             if (game != null) {
-                step(player, game);
+                step(player, game, claimed);
             } else if (eligible(player) && clock >= COOLDOWN_UNTIL.getOrDefault(playerId, 0L)) {
                 if ((clock & 1) == 0) {
                     findEyestrain(player, claimed);
@@ -86,17 +96,17 @@ public final class EyestrainEncounter {
             }
         }
 
-        // A player may disconnect without a final player tick.
-        Iterator<Map.Entry<UUID, Game>> itr = ACTIVE.entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<UUID, Game> entry = itr.next();
+        // Make sure disconnected players do not leave permanently frozen Phantoms.
+        Iterator<Map.Entry<UUID, Game>> iterator = ACTIVE.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Game> entry = iterator.next();
             if (server.getPlayerManager().getPlayer(entry.getKey()) == null) {
-                release(entry.getValue());
-                itr.remove();
+                releaseAll(entry.getValue());
+                iterator.remove();
             }
         }
-        if ((clock % 1200) == 0) {
-            COOLDOWN_UNTIL.entrySet().removeIf(e -> e.getValue() < clock);
+        if (clock % 1200 == 0) {
+            COOLDOWN_UNTIL.entrySet().removeIf(entry -> entry.getValue() < clock);
         }
     }
 
@@ -104,93 +114,182 @@ public final class EyestrainEncounter {
         return player.isAlive() && !player.isSpectator() && !player.getAbilities().creativeMode;
     }
 
-    private static void findEyestrain(ServerPlayerEntity player, Set<UUID> claimed) {
+    private static boolean available(PhantomEntity phantom, Set<UUID> claimed) {
+        return phantom.isAlive()
+            && phantom.getCommandTags().contains(FanumMod.EYESTRAIN)
+            && !claimed.contains(phantom.getUuid());
+    }
+
+    private static List<PhantomEntity> nearby(ServerPlayerEntity player, double range,
+                                               Set<UUID> claimed) {
         ServerWorld world = player.getEntityWorld();
-        Vec3d center = player.getEyePos();
-        Box bounds = new Box(center.add(-DETECTION_RANGE, -DETECTION_RANGE, -DETECTION_RANGE),
-                             center.add(DETECTION_RANGE, DETECTION_RANGE, DETECTION_RANGE));
-        for (PhantomEntity phantom : world.getEntitiesByClass(PhantomEntity.class, bounds,
-                p -> p.isAlive() && p.getCommandTags().contains(FanumMod.EYESTRAIN) && !claimed.contains(p.getUuid()))) {
+        Vec3d pos = player.getEyePos();
+        Box bounds = new Box(pos.add(-range, -range, -range),
+                             pos.add(range, range, range));
+        return world.getEntitiesByClass(PhantomEntity.class, bounds,
+            phantom -> available(phantom, claimed)
+                && phantom.squaredDistanceTo(player) <= range * range);
+    }
+
+    private static void findEyestrain(ServerPlayerEntity player, Set<UUID> claimed) {
+        List<PhantomEntity> candidates = nearby(player, DETECTION_RANGE, claimed);
+        for (PhantomEntity phantom : candidates) {
             if (staring(player, phantom, DETECTION_RANGE, 0.982)) {
-                start(player, phantom);
-                claimed.add(phantom.getUuid());
+                start(player, phantom, claimed);
                 return;
             }
         }
     }
 
-    private static void start(ServerPlayerEntity player, PhantomEntity phantom) {
-        Game game = new Game(phantom, player);
-        ACTIVE.put(player.getUuid(), game);
+    private static void enlist(Game game, PhantomEntity phantom, Set<UUID> claimed) {
+        if (claimed.contains(phantom.getUuid())) return;
+        game.members.put(phantom.getUuid(), new Participant(phantom));
+        claimed.add(phantom.getUuid());
         phantom.setAiDisabled(true);
         phantom.setVelocity(Vec3d.ZERO);
+        phantom.setTarget(null);
+    }
+
+    private static void recruitNearby(Game game, ServerPlayerEntity player, Set<UUID> claimed) {
+        // Newly summoned Eyestrains may join an encounter already in progress.
+        for (PhantomEntity phantom : nearby(player, GROUP_RANGE, claimed)) {
+            enlist(game, phantom, claimed);
+        }
+    }
+
+    private static void start(ServerPlayerEntity player, PhantomEntity staredAt,
+                              Set<UUID> claimed) {
+        Game game = new Game(player.getEntityWorld());
+        // The entity that was actually looked at leads; other nearby
+        // Eyestrains are activated without needing the player's gaze.
+        enlist(game, staredAt, claimed);
+        recruitNearby(game, player, claimed);
+        ACTIVE.put(player.getUuid(), game);
+
+        // Exactly 20 health points (10 hearts) on encounter entry.
+        player.setHealth(Math.min(20.0f, player.getMaxHealth()));
         player.addCommandTag(ACTIVE_TAG);
         applyEffects(player);
-        player.sendMessage(Text.literal("EYESTRAIN - DON'T LOOK AT IT").formatted(Formatting.DARK_RED), true);
+        int count = game.members.size();
+        player.sendMessage(Text.literal("EYESTRAIN x" + count + " - DON'T LOOK!")
+            .formatted(Formatting.DARK_RED), true);
+
         ServerWorld world = player.getEntityWorld();
         world.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.ENTITY_PHANTOM_SWOOP, SoundCategory.HOSTILE, 1.8f, 0.65f);
+            SoundEvents.ENTITY_PHANTOM_SWOOP, SoundCategory.HOSTILE, 1.8f, 0.65f);
     }
 
     private static void applyEffects(ServerPlayerEntity player) {
-        // Amplifier 4 means Resistance V, not IV.
+        // Resistance V is amplifier 4. Eyestrain's direct-health damage ignores it.
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 42, 4, false, false, true));
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 65, 0, false, false, true));
     }
 
-    private static void step(ServerPlayerEntity player, Game game) {
-        ServerWorld world = player.getEntityWorld();
-        Entity entity = game.world.getEntity(game.phantomId);
-        if (world != game.world || !(entity instanceof PhantomEntity phantom)
-                || !phantom.isAlive() || !eligible(player) || player.squaredDistanceTo(phantom) > 64 * 64
-                || game.ticks >= DURATION) {
+    private static PhantomEntity alivePhantom(Game game, UUID id) {
+        Entity entity = game.world.getEntity(id);
+        return entity instanceof PhantomEntity phantom && phantom.isAlive() ? phantom : null;
+    }
+
+    private static void step(ServerPlayerEntity player, Game game, Set<UUID> claimed) {
+        if (player.getEntityWorld() != game.world || !eligible(player) || game.ticks >= DURATION) {
+            finish(player, game);
+            return;
+        }
+
+        // Every half-second, gather additional unclaimed Eyestrains.
+        if (game.ticks % 10 == 0) recruitNearby(game, player, claimed);
+
+        // Dead / removed / escaped entities do not end an encounter when others survive.
+        Iterator<Map.Entry<UUID, Participant>> it = game.members.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<UUID, Participant> e = it.next();
+            PhantomEntity phantom = alivePhantom(game, e.getKey());
+            if (phantom == null || phantom.squaredDistanceTo(player)
+                    > MAX_CHASE_DISTANCE * MAX_CHASE_DISTANCE) {
+                if (phantom != null) release(game, e.getValue());
+                it.remove();
+            }
+        }
+
+        if (game.members.isEmpty()) {
             finish(player, game);
             return;
         }
 
         game.ticks++;
         if (game.ticks % 20 == 0) applyEffects(player);
-        if (game.ticks % 47 == 0) {
-            world.playSound(null, phantom.getX(), phantom.getY(), phantom.getZ(),
-                    SoundEvents.ENTITY_PHANTOM_AMBIENT, SoundCategory.HOSTILE, 1.2f,
-                    0.65f + (game.ticks % 5) * 0.06f);
-        }
 
-        // Phase 1: the Phantom surges toward the player.
-        // Phase 2: once close enough, orbit slowly at eye level.
         Vec3d eye = player.getEyePos();
-        Vec3d goal;
-        double distanceToPlayer = phantom.getEntityPos().distanceTo(eye);
-        if (game.ticks < 40 && distanceToPlayer > ORBIT_RADIUS + 0.4) {
-            Vec3d approach = eye.subtract(phantom.getEntityPos()).normalize();
-            goal = phantom.getEntityPos().add(approach.multiply(Math.min(1.18, distanceToPlayer - ORBIT_RADIUS)));
-        } else {
-            double theta = game.startAngle + game.ticks * ORBIT_SPEED;
-            goal = eye.add(
-                Math.cos(theta) * ORBIT_RADIUS,
-                0.15 + Math.sin(game.ticks * 0.095) * 0.42,
-                Math.sin(theta) * ORBIT_RADIUS
-            );
-        }
-        phantom.setPosition(goal.x, goal.y, goal.z);
-        phantom.setVelocity(Vec3d.ZERO);
-        phantom.setTarget(null);
-        Vec3d facing = eye.subtract(goal);
-        phantom.setYaw((float) (Math.atan2(-facing.x, facing.z) * 180.0 / Math.PI));
+        Vec3d gaze = player.getRotationVec(1.0F).normalize();
+        int count = game.members.size();
+        int index = 0;
+        boolean lookingAtAny = false;
 
-        boolean looking = staring(player, phantom, 19.0, 0.970);
-        if (looking) {
+        for (Participant participant : game.members.values()) {
+            PhantomEntity phantom = alivePhantom(game, participant.phantomId);
+            if (phantom == null) continue;
+
+            Vec3d goal;
+            if (index == 0) {
+                // The lead stalker constantly STEERS toward the player's gaze.
+                // Movement is rate-limited, so a sudden turn still lets the
+                // player avert their eyes briefly before it catches up again.
+                Vec3d target = eye.add(gaze.multiply(LEAD_DISTANCE));
+                // Don't burrow underground or disappear high above a player
+                // who looks straight up or down.
+                double y = Math.max(player.getY() + 0.85,
+                                    Math.min(player.getY() + 3.15, target.y + 0.15));
+                goal = new Vec3d(target.x, y, target.z);
+            } else {
+                // Extra Eyestrains no longer cling to the center of vision:
+                // they spread around the general area and sweep in an orbit.
+                // The radius grows with the group size, avoiding overlap.
+                int satellites = count - 1;
+                double radius = Math.min(10.5, 4.4 + satellites * 0.62);
+                double phase = 2.0 * Math.PI * (index - 1) / satellites;
+                double angle = game.ticks * EXTRA_ORBIT_SPEED + phase;
+                goal = eye.add(Math.cos(angle) * radius,
+                    0.3 + Math.sin(game.ticks * 0.067 + index) * 0.8,
+                    Math.sin(angle) * radius);
+            }
+
+            Vec3d current = phantom.getEntityPos();
+            Vec3d delta = goal.subtract(current);
+            double length = delta.length();
+            // Dramatic initial charge from farther away, then relentless
+            // follow. 1.45 blocks/tick far away; 0.65 nearby.
+            double maxMove = length > 9.0 ? 1.45 : (index == 0 ? 0.72 : 0.51);
+            if (length > 0.0001) {
+                Vec3d next = current.add(delta.multiply(Math.min(1.0, maxMove / length)));
+                phantom.setPosition(next.x, next.y, next.z);
+            }
+            phantom.setVelocity(Vec3d.ZERO);
+            phantom.setTarget(null);
+            Vec3d facing = eye.subtract(phantom.getEntityPos());
+            phantom.setYaw((float) (Math.atan2(-facing.x, facing.z) * 180.0 / Math.PI));
+
+            // Any Eyestrain being stared at counts, but don't multiply the
+            // damage just because several happen to overlap in the crosshair.
+            if (staring(player, phantom, 20.0, 0.970)) lookingAtAny = true;
+            if ((game.ticks + index * 13) % 47 == 0) {
+                game.world.playSound(null, phantom.getX(), phantom.getY(), phantom.getZ(),
+                    SoundEvents.ENTITY_PHANTOM_AMBIENT, SoundCategory.HOSTILE,
+                    1.0f, 0.65f + (index % 4) * 0.075f);
+            }
+            index++;
+        }
+
+        if (lookingAtAny) {
             game.stareTicks++;
             if (game.ticks % DAMAGE_INTERVAL == 0) {
-                // Direct-health damage ignores Resistance V, armor, shields, and
-                // vanilla hurt invulnerability frames. Fatal damage is delegated
-                // to Minecraft to preserve death and life-system callbacks.
+                // Direct-health hits bypass Resistance V, armor, shields,
+                // absorption and invulnerability frames.
                 if (player.getHealth() <= 1.0f) {
-                    player.damage(world, player.getDamageSources().outOfWorld(), 1000.0f);
+                    player.damage(game.world, player.getDamageSources().outOfWorld(), 1000.0f);
                 } else {
                     player.setHealth(Math.max(1.0f, player.getHealth() - 1.0f));
-                    world.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            SoundEvents.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 0.4f, 0.8f);
+                    game.world.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.ENTITY_PLAYER_HURT, SoundCategory.PLAYERS, 0.4f, 0.8f);
                 }
             }
         }
@@ -198,12 +297,14 @@ public final class EyestrainEncounter {
         if (game.ticks % 20 == 0) {
             int seconds = Math.max(0, (DURATION - game.ticks + 19) / 20);
             player.sendMessage(Text.literal(
-                (looking ? "LOOK AWAY!  " : "Don't look at Eyestrain  ") + seconds + "s"
-            ).formatted(looking ? Formatting.RED : Formatting.GRAY), true);
+                (lookingAtAny ? "LOOK AWAY!  " : "DON'T LOOK  ")
+                    + seconds + "s  |  Eyestrains: " + count
+            ).formatted(lookingAtAny ? Formatting.RED : Formatting.GRAY), true);
         }
     }
 
-    private static boolean staring(ServerPlayerEntity player, PhantomEntity phantom, double maxDistance, double minDot) {
+    private static boolean staring(ServerPlayerEntity player, PhantomEntity phantom,
+                                   double maxDistance, double minDot) {
         Vec3d origin = player.getEyePos();
         Vec3d target = phantom.getBoundingBox().getCenter();
         Vec3d difference = target.subtract(origin);
@@ -217,21 +318,26 @@ public final class EyestrainEncounter {
         return hit.getType() == HitResult.Type.MISS;
     }
 
-    private static void release(Game game) {
-        Entity entity = game.world.getEntity(game.phantomId);
-        if (entity instanceof PhantomEntity phantom && phantom.isAlive()) {
-            phantom.setAiDisabled(game.previousAiDisabled);
+    private static void release(Game game, Participant member) {
+        PhantomEntity phantom = alivePhantom(game, member.phantomId);
+        if (phantom != null) {
+            phantom.setAiDisabled(member.previousAiDisabled);
             phantom.setVelocity(Vec3d.ZERO);
         }
+    }
+
+    private static void releaseAll(Game game) {
+        for (Participant member : game.members.values()) release(game, member);
+        game.members.clear();
     }
 
     private static void finish(ServerPlayerEntity player, Game game) {
         ACTIVE.remove(player.getUuid());
         COOLDOWN_UNTIL.put(player.getUuid(), clock + COOLDOWN);
         player.removeCommandTag(ACTIVE_TAG);
-        release(game);
+        releaseAll(game);
         if (player.isAlive()) {
-            player.sendMessage(Text.literal("Eyestrain has stopped circling you.")
+            player.sendMessage(Text.literal("The Eyestrains finally lose interest.")
                 .formatted(Formatting.GRAY), true);
         }
     }

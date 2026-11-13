@@ -35,3 +35,13 @@ The Eyestrain event runs server-side; install the JAR on both server and clients
 - After 13 seconds, on mob death, on the player's death/disconnect, or if the mob is too far away, its original skin, sprint state and former AI target are restored.
 - The command does **not spawn, summon, clone, or replace a physical entity**. Multiplayer requires clients and server to install the mod for the black model to be shown.
 - Works for vanilla and modded `MobEntity` renderers that use Minecraft's standard `LivingEntityRenderer` body render layer. Does not apply to items, boats, projectiles or players.
+
+## v0.4.0 — Eyestrain pack hunt
+
+- When a player first stares at an Eyestrain Phantom, their health is set to **20 health points (10 hearts)** and a single 20-second minigame starts.
+- Eye-contact damage accelerates from once every five ticks to once every **three ticks**: 1 direct HP per hit, bypassing Resistance V and armor. Only one hit happens per damage tick, even when several Phantoms are in sight.
+- **One lead Eyestrain** rapidly closes in, then chases a point about 4 blocks in front of the player's line of sight with a slight following delay, continually trying to appear in the center of their vision.
+- **All other Eyestrains in a 36-block radius join the same encounter** without needing to be stared at individually. They orbit the general area around the player, moving farther outward when the group grows. New nearby Eyestrains are recruited twice per second.
+- If the lead Eyestrain dies, the next living pack member takes over tracking the player's gaze. Removing every Eyestrain ends the game.
+- Each Phantom's original AI-disabled state is restored afterward, and the group is released on death, logout, dimension changes, timeout or leaving the vicinity.
+- Existing `/fanum replace`, `/fanum eyestrain`, and hallucination commands remain available.

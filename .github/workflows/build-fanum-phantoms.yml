@@ -32,7 +32,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import zipfile, json, pathlib, struct
-          p=pathlib.Path("build/libs/fanum-phantoms-0.3.0.jar")
+          p=pathlib.Path("build/libs/fanum-phantoms-0.4.0.jar")
           with zipfile.ZipFile(p) as jar:
               names=set(jar.namelist())
               for classname in ("FanumEyestrain", "FanumRenderState"):
@@ -43,6 +43,8 @@ jobs:
                   assert config["package"]=="com.suitedbacon.fanum.mixin"
                   assert all("Fanum" not in c for c in config.get("mixins",[])+config.get("client",[]))
               assert "com/suitedbacon/fanum/EyestrainEncounter.class" in names
+              assert "com/suitedbacon/fanum/EyestrainEncounter$Participant.class" in names
+              assert "com/suitedbacon/fanum/EyestrainEncounter$Game.class" in names
               assert "com/suitedbacon/fanum/mixin/EyestrainHealingMixin.class" in names
               assert "EyestrainHealingMixin" in json.loads(jar.read("fanum.mixins.json"))["mixins"]
               assert "com/suitedbacon/fanum/ReplaceEncounter.class" in names
@@ -79,14 +81,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: fanum-phantoms-fabric-1.21.11
-          path: fanum-phantoms/build/libs/fanum-phantoms-0.3.0.jar
+          path: fanum-phantoms/build/libs/fanum-phantoms-0.4.0.jar
       - name: Commit compiled JAR for direct download
         working-directory: .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p fanum-phantoms/dist
-          cp fanum-phantoms/build/libs/fanum-phantoms-0.3.0.jar fanum-phantoms/dist/fanum-phantoms-0.3.0.jar
-          git add -f fanum-phantoms/dist/fanum-phantoms-0.3.0.jar
+          cp fanum-phantoms/build/libs/fanum-phantoms-0.4.0.jar fanum-phantoms/dist/fanum-phantoms-0.4.0.jar
+          git add -f fanum-phantoms/dist/fanum-phantoms-0.4.0.jar
           git commit -m "Store compiled Fanum Phantom JAR [skip ci]" || true
           git push
