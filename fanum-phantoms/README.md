@@ -45,3 +45,12 @@ The Eyestrain event runs server-side; install the JAR on both server and clients
 - If the lead Eyestrain dies, the next living pack member takes over tracking the player's gaze. Removing every Eyestrain ends the game.
 - Each Phantom's original AI-disabled state is restored afterward, and the group is released on death, logout, dimension changes, timeout or leaving the vicinity.
 - Existing `/fanum replace`, `/fanum eyestrain`, and hallucination commands remain available.
+
+## v0.5.0 — Rare nighttime replacements
+
+- **Automatically at night** in the Overworld, ordinary passive, hostile, and modded mobs may suddenly become pitch-black screaming pursuers. No mob is spawned, cloned, or deleted. The *same existing entity* changes appearance and behavior temporarily.
+- The server checks every 10 seconds per survival player and rolls **1 in 12** if at least one eligible mob is around. A randomly selected eligible mob 6–26 blocks away is transformed for 13 seconds. Each player has a 2-minute natural encounter cooldown, and a player has at most one *natural* replacement at once.
+- A naturally triggered replacement stops if daytime begins. The original mob's render texture, target and sprint status are restored at the end.
+- `/fanum replace` still works as a direct command. **During the day**, select a mob only in darkness (light ≤7). **At night**, select any eligible mob within 20 blocks regardless of block light, even under torches.
+- All living `MobEntity` classes, including most custom/modded mobs, are candidates. Players, loose item drops, projectiles, blocks, vehicles and other non-mob entities are excluded; those do not have normal mob navigation and sprint AI.
+- This is a rare ambient horror encounter, **not** a universal aggressive AI change for every mob at night.
